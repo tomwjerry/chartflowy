@@ -1,0 +1,14 @@
+{
+  "name": "flowy",
+  "version": "0.0.1",
+  "description": "Yet another Javascript SVG Flowchart Editor",
+  "main": "index.js",
+  "scripts": {
+    "build": "esbuild src/main.js --bundle --outfile=build/jssvgflowedit.js"
+  },
+  "author": "Tom",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "esbuild": "0.19.8"
+  }
+}
