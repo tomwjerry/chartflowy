@@ -1,0 +1,50 @@
+<!doctype html>
+    <html class="no-js" lang="">
+
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title></title>
+        <link rel="stylesheet" href="css/style.css">
+    </head>
+
+    <body>
+        <main>
+            <aside id="createbox">
+                <button type="button" class="toolbox-button"
+                    data-shape="rect"><svg class="icon">
+                    <use xlink:href="/svgsprites.svg#rect" />
+                </svg></button>
+                <button type="button" class="toolbox-button"
+                    data-shape="roundrect"><svg class="icon">
+                    <use xlink:href="/svgsprites.svg#roundrect" />
+                </svg></button>
+                <button type="button" class="toolbox-button"
+                    data-shape="rhomb"><svg class="icon">
+                    <use xlink:href="/svgsprites.svg#rhomb" />
+                </svg></button>
+                <button type="button" class="toolbox-button"
+                    data-shape="circle"><svg class="icon">
+                    <use xlink:href="/svgsprites.svg#circle" />
+                </svg></button>
+                <button type="button" class="toolbox-button"
+                    data-shape="elipse"><svg class="icon">
+                    <use xlink:href="/svgsprites.svg#elipse" />
+                </svg></button>
+            </aside>
+            <div>
+                <aside id="toolbox"></aside>
+                <svg id="editsvg"></svg>
+            </div>
+            <aside id="propertybox"></aside>
+        </main>
+        <script src="jssvgflowedit.js" type="module"></script>
+        <script>
+            const editor = new globalThis.FlowchartEditor(document.getElementById('editsvg'), {
+                createBoxElement: document.getElementById('createbox'),
+                propertyBoxElement: document.getElementById('propertybox'),
+                toolboxElement: document.getElementById('toolbox')
+            });
+        </script>
+    </body>
+</html>
