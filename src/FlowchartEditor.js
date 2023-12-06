@@ -1,6 +1,6 @@
 'use strict';
 
-export default class FlowchartEditor {
+export class FlowchartEditor {
     svgelement;
     settings;
 

@@ -5,7 +5,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title></title>
-        <link rel="stylesheet" href="css/style.css">
+        <link rel="stylesheet" href="examplestyle.css">
     </head>
 
     <body>
@@ -38,13 +38,14 @@
             </div>
             <aside id="propertybox"></aside>
         </main>
-        <script src="jssvgflowedit.js" type="module"></script>
+        <script src="jssvgflowedit.js"></script>
         <script>
-            const editor = new globalThis.FlowchartEditor(document.getElementById('editsvg'), {
+            const editor = new jssvgflow.FlowchartEditor(document.getElementById('editsvg'), {
                 createBoxElement: document.getElementById('createbox'),
                 propertyBoxElement: document.getElementById('propertybox'),
                 toolboxElement: document.getElementById('toolbox')
             });
+            editor.enable();
         </script>
     </body>
 </html>

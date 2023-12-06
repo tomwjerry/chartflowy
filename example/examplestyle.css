@@ -1,0 +1,38 @@
+html, body {
+    box-sizing: border-box;
+    margin: 0;
+}
+
+#editsvg {
+    height: 100vh;
+    width: 100vw;
+}
+
+#createbox {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5rem;
+    height: 100vh;
+}
+
+#createbox button {
+    border-radius: 0;
+    background-color: transparent;
+    border: 1px solid #000000;
+    height: 4rem;
+}
+
+#createbox button svg {
+    height: 100%;
+    width: 100%;
+}
+
+#toolbox {
+    position: absolute;
+}
+
+#propertybox {
+    position: absolute;
+}
