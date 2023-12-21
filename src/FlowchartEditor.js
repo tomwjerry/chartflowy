@@ -33,6 +33,7 @@ export class FlowchartEditor {
             'mousedown',
             this.handleEvent.bind(this)
         ]);
+        this.eventList.push([document, 'mousedown', this.handleEvent.bind(this)]);
         this.eventList.push([document, 'mousemove', this.handleEvent.bind(this)]);
         this.eventList.push([document, 'mouseup', this.handleEvent.bind(this)]);
         
@@ -57,13 +58,15 @@ export class FlowchartEditor {
                     this.currentCommand = 'create';
                     this.elementEditorObj.selectcreate(ev.target.dataset.shape);
                 }
+            } else {
+                this.elementEditorObj.positionalPress(ev);
             }
         } else if (ev.type == 'mousemove') {
             const pt = new DOMPoint(ev.clientX, ev.clientY);
-            this.elementEditorObj.mainpulationupdate(pt);
+            this.elementEditorObj.positionalMove(pt);
         } else if (ev.type == 'mouseup') {
             this.currentCommand = '';
-            this.elementEditorObj.mainpulationdone();
+            this.elementEditorObj.positionalRelease();
         }
     }
  

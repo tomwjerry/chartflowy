@@ -33,6 +33,7 @@ export default class ElementEditor {
     }
 
     selectcreate(datashape) {
+        this.clearSelection();
         switch (datashape) {
             case 'rect':
                 this.selectedElement = new RectangleShape({ width: '100', height: '50' });
@@ -54,44 +55,30 @@ export default class ElementEditor {
         }
 
         const guiGroup = Util.makeSVGElement('g');
-        guiGroup.setAttribute('class', 'gui');
-        const svgShape = this.selectedElement.getCorropspondingShape();
-        svgShape.setAttribute('stroke', '#000000');
-        svgShape.setAttribute('fill', 'none');
         const eleid = 'fce_' + this.nextid;
+        const svgShape = this.selectedElement.getCorropspondingShape();
+        guiGroup.setAttribute('class', 'gui');
+        svgShape.setAttribute('stroke', '#000000');
+        svgShape.setAttribute('fill', '#ffffff');
+        svgShape.setAttribute('id', eleid);
+
         this.nextid++;
         this.elementLookup.set(eleid, this.listOfElements.length);
-        this.listOfElements.push(svgShape);
+        this.listOfElements.push(this.selectedElement);
         guiGroup.appendChild(svgShape);
         this.workArea.appendChild(guiGroup);
         this.shouldCreate = true;
     }
 
-    mainpulationupdate(pos) {
-        if (!this.selectedElement) {
-            return;
-        }
-        const currentCommand = this.editor.getCurrentCommand();
+    clearSelection() {
+        const oldSelections = this.workArea.querySelectorAll('.resize-handle');
 
-        if (currentCommand == 'create' ||
-            currentCommand == 'move') {
-            const shape = this.selectedElement.getCorropspondingShape().parentNode;
-            shape.setAttribute('transform', 'translate(' + pos.x + ', ' + pos.y + ')');
-
-            if (this.shouldCreate) {
-                this.shouldCreate = false;
-                this.undoRedo.addHistory(new CreateCommand(this.selectedElement, this.workArea));
-            } else {
-                this.undoRedo.addHistory(new ModifyCommand(this.selectedElement, this.selectedElement.attributes));
-            }
+        for (let rmSel of oldSelections) {
+            rmSel.remove();
         }
     }
 
-    mainpulationdone() {
-        if (!this.selectedElement) {
-            return;
-        }
-        // Make resize borders if there are none
+    doSelectElement() {
         const svgGroup = this.selectedElement.getCorropspondingShape().parentNode;
         if (!svgGroup.querySelector('.resize-handle')) {
             // Make selection borders and corners
@@ -116,5 +103,42 @@ export default class ElementEditor {
                 svgGroup.appendChild(corner);
             }
         }
+    }
+
+    positionalPress(ev) {
+        this.selectedElement = null;
+        this.clearSelection();
+        if (this.elementLookup.has(ev.target.id)) {
+            this.selectedElement = this.listOfElements[this.elementLookup.get(ev.target.id)];
+            this.doSelectElement();
+        }
+    }
+
+    positionalMove(pos) {
+        if (!this.selectedElement) {
+            return;
+        }
+        const currentCommand = this.editor.getCurrentCommand();
+
+        if (currentCommand == 'create' ||
+            currentCommand == 'move') {
+            const shape = this.selectedElement.getCorropspondingShape().parentNode;
+            shape.setAttribute('transform', 'translate(' + pos.x + ', ' + pos.y + ')');
+
+            if (this.shouldCreate) {
+                this.shouldCreate = false;
+                this.undoRedo.addHistory(new CreateCommand(this.selectedElement, this.workArea));
+            } else {
+                this.undoRedo.addHistory(new ModifyCommand(this.selectedElement, this.selectedElement.attributes));
+            }
+        }
+    }
+
+    positionalRelease() {
+        if (!this.selectedElement) {
+            return;
+        }
+        // Make resize borders if there are none
+        this.doSelectElement();
     }
 }
