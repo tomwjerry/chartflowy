@@ -2,9 +2,11 @@
 
 import ElementEditor from './ElementEditor';
 import UndoRedo from './UndoRedo';
+import Util from './Util';
 
 export class FlowchartEditor {
-    svgelement;
+    svgElement;
+    workArea;
     settings;
     currentCommand;
     eventList;
@@ -13,14 +15,17 @@ export class FlowchartEditor {
     elementEditorObj;
     UndoRedoObj;
 
-    constructor(svgelement, settings) {
-        this.svgelement = svgelement;
+    constructor(svgElement, settings) {
+        this.svgElement = svgElement;
         this.settings = settings;
         this.currentCommand = null;
         this.signals = {};
 
-        this.elementEditorObj = new ElementEditor(this, this.svgelement);
+        this.workArea = Util.makeSVGElement('g');
+        this.svgElement.appendChild(this.workArea);
+
         this.UndoRedoObj = new UndoRedo(this);
+        this.elementEditorObj = new ElementEditor(this, this.workArea, this.UndoRedoObj);
 
         this.eventList = [];
         this.eventList.push([
@@ -46,7 +51,9 @@ export class FlowchartEditor {
     handleEvent(ev) {
         if (ev.type == 'mousedown') {
             if (ev.target.classList.contains('createbox-button')) {
-                if (this.currentCommand != 'create') {
+                if (this.currentCommand != 'create' &&
+                    this.currentCommand != 'move' &&
+                    this.currentCommand != 'resize') {
                     this.currentCommand = 'create';
                     this.elementEditorObj.selectcreate(ev.target.dataset.shape);
                 }
@@ -55,7 +62,7 @@ export class FlowchartEditor {
             const pt = new DOMPoint(ev.clientX, ev.clientY);
             this.elementEditorObj.mainpulationupdate(pt);
         } else if (ev.type == 'mouseup') {
-            this.currentCommand = 'move';
+            this.currentCommand = '';
             this.elementEditorObj.mainpulationdone();
         }
     }

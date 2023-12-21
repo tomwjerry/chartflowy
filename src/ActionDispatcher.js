@@ -9,7 +9,7 @@ class BaseCommand {
 }
 
 // Make a command pattern of following functions: create, delete and modify
-class CreateCommand extends BaseCommand {
+export class CreateCommand extends BaseCommand {
     item;
     oldItem;
     context;
@@ -34,7 +34,7 @@ class CreateCommand extends BaseCommand {
     }
 }
 
-class DeleteCommand extends BaseCommand {
+export class DeleteCommand extends BaseCommand {
     item;
     oldItem;
     context;
@@ -56,7 +56,7 @@ class DeleteCommand extends BaseCommand {
     }
 }
 
-class ModifyCommand extends BaseCommand {
+export class ModifyCommand extends BaseCommand {
     item;
     attributes;
     oldAttributes;

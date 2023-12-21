@@ -4,6 +4,7 @@ html, body {
 }
 
 #editsvg {
+    shape-rendering: auto;
     height: 100vh;
     width: 100vw;
 }
@@ -36,4 +37,17 @@ html, body {
 
 #propertybox {
     position: absolute;
+}
+
+/* Styles inside SVG - break out to an own css? */
+.resize-handle.edge {
+    stroke: #36cbf0;
+    stroke-dasharray: 5 5;
+    stroke-width: 1;
+}
+
+.resize-handle.corner {
+    stroke: #49abce;
+    stroke-width: 1;
+    fill: #ffffff;
 }

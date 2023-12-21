@@ -1,49 +1,47 @@
 'use strict';
 
 export default class BaseShape {
+    // What SVG shape this refers to, should be a direct reference
     corrospondingShape;
-    boundingBox;
-    handles;
+    // Array of recomendend connections, positions to connect paths to
     recomendedConnections;
-    allConnections;
+    // Arrary of all currently paths lines
+    currentlyConnections;
 
-    getCorropspondingShape() {
-        return this.corrospondingShape;
+    constructor() {
+        this.recomendedConnections = [];
+        this.allConnections = [];
     }
 
-    move(pos) {
-        this.corrospondingShape.setAttribute('x', pos.x);
-        this.corrospondingShape.setAttribute('y', pos.y);
-    }
+    // Handles, to resize the figure, bade on the bounding box
+    getResizeHandles() {
+        const boundingBox = this.corrospondingShape.getBBox();
 
-    getHandles() {
-        if (!this.handles) {
-            if (!this.boundingBox) {
-                this.boundingBox = this.corrospondingShape.getBBox();
+        return [
+            {
+                x: boundingBox.x,
+                y: boundingBox.y
+            },
+            {
+                x: boundingBox.x + boundingBox.width,
+                y: boundingBox.y
+            },
+            {
+                x: boundingBox.x + boundingBox.width,
+                y: boundingBox.y + boundingBox.height
+            },
+            {
+                x: boundingBox.x,
+                y: boundingBox.y + boundingBox.height
             }
-            this.handles = [
-                {
-                    x: this.boundingBox.x,
-                    y: this.boundingBox.y
-                },
-                {
-                    x: this.boundingBox.x + this.boundingBox.width,
-                    y: this.boundingBox.y
-                },
-                {
-                    x: this.boundingBox.x + this.boundingBox.width,
-                    y: this.boundingBox.y + this.boundingBox.height
-                },
-                {
-                    x: this.boundingBox.x,
-                    y: this.boundingBox.y + this.boundingBox.height
-                }
-            ];
-        }
-
-        return this.boundingBox;
+        ];
     }
 
     getRecommendedConnections() {
+        return this.recomendedConnections;
+    }
+
+    getCorropspondingShape() {
+        return this.corrospondingShape;
     }
 }

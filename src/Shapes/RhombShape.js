@@ -1,22 +1,16 @@
 'use strict';
 
-import BaseShape from "./BaseShape";
+import BaseShape from './BaseShape';
+import Util from '../Util';
 
-export default class RectangleShape extends BaseShape {
+export default class RhombShape extends BaseShape {
     constructor(attr) {
         super();
-        this.corrospondingShape =
-            document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        this.corrospondingShape.setAttribute('width', '100');
-        this.corrospondingShape.setAttribute('height', '60');
 
-        if (attr) {
-            if (attr.round) {
-                this.corrospondingShape.setAttribute('rx', attr.round);
-            }
-        }
-    }
-
-    getRecommendedConnections() {
+        this.corrospondingShape = Util.makeSVGElement('path');
+        this.corrospondingShape.setAttribute('d', 'M 0 ' + ' ' + (-(attr.height / 2)) +
+            ' L ' + (attr.width / 2) + ' 0' +
+            ' L 0 ' + (attr.height / 2) +
+            ' L ' + (-(attr.width / 2)) + ' 0 z');
     }
 }
