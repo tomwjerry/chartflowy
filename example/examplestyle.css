@@ -40,6 +40,19 @@ html, body {
 }
 
 /* Styles inside SVG - break out to an own css? */
+#editsvg.cur-rsnesw {
+    cursor: nesw-resize;
+}
+#editsvg.cur-rsnwse {
+    cursor: nwse-resize;
+}
+#editsvg.cur-rsns {
+    cursor: ns-resize;
+}
+#editsvg.cur-rsew {
+    cursor: ew-resize;
+}
+
 .resize-handle.edge {
     stroke: #36cbf0;
     stroke-dasharray: 5 5;

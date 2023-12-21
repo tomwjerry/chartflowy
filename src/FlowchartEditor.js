@@ -59,7 +59,7 @@ export class FlowchartEditor {
                     this.elementEditorObj.selectcreate(ev.target.dataset.shape);
                 }
             } else {
-                this.elementEditorObj.positionalPress(ev);
+                this.elementEditorObj.positionalPress(ev, new DOMPoint(ev.clientX, ev.clientY));
             }
         } else if (ev.type == 'mousemove') {
             const pt = new DOMPoint(ev.clientX, ev.clientY);

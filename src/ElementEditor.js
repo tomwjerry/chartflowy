@@ -105,7 +105,49 @@ export default class ElementEditor {
         }
     }
 
-    positionalPress(ev) {
+    checkInsisideResize(pos) {
+        if (this.selectedElement) {
+            const tolerance = 5;
+            const elementBBox = this.selectedElement.getCorropspondingShape().getBBox();
+            const actualPos = this.selectedElement.getCorropspondingShape().getBoundingClientRect();
+            const resizeBounds = {
+                minLeft: actualPos.x - tolerance,
+                minTop: actualPos.y - tolerance,
+                minRight: actualPos.x + elementBBox.width - tolerance,
+                minBottom: actualPos.y + elementBBox.height - tolerance,
+                maxLeft: actualPos.x + tolerance,
+                maxTop: actualPos.y + tolerance,
+                maxRight: actualPos.x + elementBBox.width + tolerance,
+                maxBottom: actualPos.y + elementBBox.height + tolerance
+            };
+
+            const foundResizePos = {
+                left: pos.x >= resizeBounds.minLeft && pos.x <= resizeBounds.maxLeft,
+                right: pos.x >= resizeBounds.minRight && pos.x <= resizeBounds.maxRight,
+                top: pos.y >= resizeBounds.minTop && pos.y <= resizeBounds.maxTop,
+                bottom: pos.y >= resizeBounds.minBottom && pos.y <= resizeBounds.maxBottom
+            };
+
+            if (!foundResizePos.left &&
+                !foundResizePos.right &&
+                !foundResizePos.top &&
+                !foundResizePos.bottom) {
+                return false;
+            }
+
+            return foundResizePos;
+        }
+
+        return false;
+    }
+
+    positionalPress(ev, pos) {
+        // If we press the handles
+        const shouldResize = this.checkInsisideResize(pos);
+        if (shouldResize != false) {
+            return;
+        }
+
         this.selectedElement = null;
         this.clearSelection();
         if (this.elementLookup.has(ev.target.id)) {
@@ -131,6 +173,30 @@ export default class ElementEditor {
                 this.undoRedo.addHistory(new CreateCommand(this.selectedElement, this.workArea));
             } else {
                 this.undoRedo.addHistory(new ModifyCommand(this.selectedElement, this.selectedElement.attributes));
+            }
+        } else {
+            const shouldResize = this.checkInsisideResize(pos);
+            this.editor.svgElement.classList.remove('cur-rsnesw', 'cur-rsnwse', 'cur-rsns', 'cur-rsew');
+            if (shouldResize != false) {
+                if (shouldResize.left || shouldResize.right) {
+                    if (shouldResize.top) {
+                        if (shouldResize.right) {
+                            this.editor.svgElement.classList.add('cur-rsnesw');
+                        } else {
+                            this.editor.svgElement.classList.add('cur-rsnwse');
+                        }
+                    } else if (shouldResize.bottom) {
+                        if (shouldResize.right) {
+                            this.editor.svgElement.classList.add('cur-rsnwse');
+                        } else {
+                            this.editor.svgElement.classList.add('cur-rsnesw');
+                        }
+                    } else {
+                        this.editor.svgElement.classList.add('cur-rsew');
+                    }
+                } else if (shouldResize.top || shouldResize.bottom) {
+                    this.editor.svgElement.classList.add('cur-rsns');
+                }
             }
         }
     }
