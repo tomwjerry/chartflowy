@@ -111,6 +111,7 @@ export default class ElementEditor {
         if (this.elementLookup.has(ev.target.id)) {
             this.selectedElement = this.listOfElements[this.elementLookup.get(ev.target.id)];
             this.doSelectElement();
+            this.editor.setCurrentCommand('move');
         }
     }
 
