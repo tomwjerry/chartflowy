@@ -111,7 +111,7 @@ export default class ElementEditor {
      */
     checkInsisideResize(pos) {
         if (this.selectedElement) {
-            const tolerance = 4;
+            const tolerance = 5;
             const elementBBox = this.selectedElement.getCorropspondingShape().getBBox();
             const actualPos = this.selectedElement
                 .getCorropspondingShape().getBoundingClientRect();

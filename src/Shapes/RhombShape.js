@@ -16,14 +16,31 @@ export default class RhombShape extends BaseShape {
 
     resize(newSize) {
         const beforeBBox = this.corrospondingShape.getBBox();
-        const topEdge = beforeBBox.y + newSize.y;
-        const leftEdge = beforeBBox.x + newSize.x;
-        const bottomEdge = newSize.height + (beforeBBox.height / 2);
-        const rightEdge = newSize.width + (beforeBBox.width / 2);
+        const oldHalfHeight = beforeBBox.height / 2;
+        const oldHalfWidth = beforeBBox.width / 2;
+        const oldCenterX = beforeBBox.x + newSize.x + oldHalfWidth - newSize.width;
+        const oldCenterY = beforeBBox.y + newSize.y + oldHalfHeight - newSize.height;
         
-        this.corrospondingShape.setAttribute('d', 'M 0 ' + ' ' + topEdge +
-            ' L ' + rightEdge + ' 0' +
-            ' L 0 ' + bottomEdge +
-            ' L ' + leftEdge + ' 0 z');
+        const centerX = oldCenterX + beforeBBox.x + oldHalfWidth;
+        const centerY = oldCenterY + beforeBBox.y + oldHalfHeight;
+        const halfWidth = (oldCenterX - oldHalfWidth) - (beforeBBox.x + oldHalfWidth);
+        const halfHeight = (oldCenterY - oldHalfHeight) - (beforeBBox.y + oldHalfHeight);
+        
+        const drawPositions = [
+            centerX,
+            centerY - halfHeight,
+            centerX + halfWidth,
+            centerY,
+            centerX,
+            centerY + halfHeight,
+            oldCenterX - halfWidth,
+            centerY
+        ];
+        
+        this.corrospondingShape.setAttribute('d', 'M ' +
+            drawPositions[0] + ' ' + drawPositions[1] +
+            ' L ' + drawPositions[2] + ' ' + drawPositions[3] +
+            ' L ' + drawPositions[4] + ' ' + drawPositions[5] +
+            ' L ' + drawPositions[6] + ' ' + drawPositions[7] + ' z');
     }
 }
