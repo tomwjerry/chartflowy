@@ -25,6 +25,6 @@ export default class RectangleShape extends BaseShape {
             beforeBBox.width + newSize.width - newSize.x);
         this.corrospondingShape.setAttribute('y', beforeBBox.y + newSize.y);
         this.corrospondingShape.setAttribute('height',
-                beforeBBox.height + newSize.height - newSize.y);
+            beforeBBox.height + newSize.height - newSize.y);
     }
 }
