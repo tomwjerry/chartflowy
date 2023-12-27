@@ -195,33 +195,35 @@ export default class ElementEditor {
             // (isnt scale n' transform more simple?)
             const resizePositionBox = this.selectedElement
                 .getCorropspondingShape().getBoundingClientRect();
-            const relativePosition = {
-                x: pos.x - resizePositionBox.x,
-                y: pos.y - resizePositionBox.y
-            };
             const resizeBoundingBox = this.selectedElement
                 .getCorropspondingShape().getBBox();
-            console.log(resizeBoundingBox);
-            console.log('hai');
+            const relativeResizePositionBox = {
+                x: 0,
+                y: 0,
+                width: 0,
+                height: 0
+            };
 
             // Second, we have saved the resize direction, so yes
             // the infameous check every direction strikes again!
             // Update the approate corner in the bounding box
             if (this.resizeDirections.top) {
-                resizeBoundingBox.y += relativePosition.y;
+                relativeResizePositionBox.y = pos.y - resizePositionBox.y;
             } else if (this.resizeDirections.bottom) {
-                resizeBoundingBox.height += relativePosition.y;
+                relativeResizePositionBox.height =
+                    pos.y - resizePositionBox.y - resizeBoundingBox.height;
             }
             if (this.resizeDirections.left) {
-                resizeBoundingBox.x += relativePosition.x;
+                relativeResizePositionBox.x = pos.x - resizePositionBox.x;
             } else if (this.resizeDirections.right) {
                 // Does this really works?
-                resizeBoundingBox.width += relativePosition.x;
+                relativeResizePositionBox.width =
+                    pos.x - resizePositionBox.x - resizeBoundingBox.width;
             }
 
             // Finally, call the resize method that update the size.
             // We probally do not want to scale, thats ugly, but more simple
-            this.selectedElement.resize(resizeBoundingBox);
+            this.selectedElement.resize(relativeResizePositionBox);
 
         // Here we just check if we can resize, to update mouse cursor
         } else {

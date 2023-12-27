@@ -20,11 +20,12 @@ export default class RectangleShape extends BaseShape {
 
     resize(newSize) {
         console.log(newSize);
-        this.corrospondingShape.setAttribute('x', newSize.x);
-        this.corrospondingShape.setAttribute('y', newSize.y);
+        const beforeBBox = this.corrospondingShape.getBBox();
+        this.corrospondingShape.setAttribute('x', beforeBBox.x + newSize.x);
         this.corrospondingShape.setAttribute('width',
-            Math.abs(newSize.x) + (newSize.width / 2));
+            beforeBBox.width + newSize.width - newSize.x);
+        this.corrospondingShape.setAttribute('y', beforeBBox.y + newSize.y);
         this.corrospondingShape.setAttribute('height',
-            Math.abs(newSize.y) + (newSize.height / 2));
+                beforeBBox.height + newSize.height - newSize.y);
     }
 }
