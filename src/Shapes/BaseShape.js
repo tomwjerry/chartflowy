@@ -44,4 +44,6 @@ export default class BaseShape {
     getCorropspondingShape() {
         return this.corrospondingShape;
     }
+
+    resize(newSize) {}
 }

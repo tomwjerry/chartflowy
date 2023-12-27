@@ -14,6 +14,7 @@ export default class ElementEditor {
     undoRedo;
 
     shouldCreate;
+    resizeDirections;
     selectedElement;
     listOfElements;
     elementLookup;
@@ -105,11 +106,15 @@ export default class ElementEditor {
         }
     }
 
+    /**
+     * Determine if mouse position is inside the selected element resize border
+     */
     checkInsisideResize(pos) {
         if (this.selectedElement) {
-            const tolerance = 5;
+            const tolerance = 4;
             const elementBBox = this.selectedElement.getCorropspondingShape().getBBox();
-            const actualPos = this.selectedElement.getCorropspondingShape().getBoundingClientRect();
+            const actualPos = this.selectedElement
+                .getCorropspondingShape().getBoundingClientRect();
             const resizeBounds = {
                 minLeft: actualPos.x - tolerance,
                 minTop: actualPos.y - tolerance,
@@ -143,15 +148,19 @@ export default class ElementEditor {
 
     positionalPress(ev, pos) {
         // If we press the handles
-        const shouldResize = this.checkInsisideResize(pos);
-        if (shouldResize != false) {
+        const checkResizeDir = this.checkInsisideResize(pos);
+        if (checkResizeDir != false) {
+            this.editor.setCurrentCommand('resize');
+            this.resizeDirections = checkResizeDir;
+            
             return;
         }
 
         this.selectedElement = null;
         this.clearSelection();
         if (this.elementLookup.has(ev.target.id)) {
-            this.selectedElement = this.listOfElements[this.elementLookup.get(ev.target.id)];
+            this.selectedElement =
+                this.listOfElements[this.elementLookup.get(ev.target.id)];
             this.doSelectElement();
             this.editor.setCurrentCommand('move');
         }
@@ -170,13 +179,55 @@ export default class ElementEditor {
 
             if (this.shouldCreate) {
                 this.shouldCreate = false;
-                this.undoRedo.addHistory(new CreateCommand(this.selectedElement, this.workArea));
+                this.undoRedo.addHistory(new CreateCommand(
+                    this.selectedElement, this.workArea));
             } else {
-                this.undoRedo.addHistory(new ModifyCommand(this.selectedElement, this.selectedElement.attributes));
+                this.undoRedo.addHistory(new ModifyCommand(
+                    this.selectedElement, this.selectedElement.attributes));
             }
+
+        // If we actively resize
+        } else if (currentCommand == 'resize') {
+            // First we want to get the actual boundingbox
+            // I think the client bounding box might not be accurate so I might
+            // need to combine it with SVG BBox
+            // We need to convert to relative corridates
+            // (isnt scale n' transform more simple?)
+            const resizePositionBox = this.selectedElement
+                .getCorropspondingShape().getBoundingClientRect();
+            const relativePosition = {
+                x: pos.x - resizePositionBox.x,
+                y: pos.y - resizePositionBox.y
+            };
+            const resizeBoundingBox = this.selectedElement
+                .getCorropspondingShape().getBBox();
+            console.log(resizeBoundingBox);
+            console.log('hai');
+
+            // Second, we have saved the resize direction, so yes
+            // the infameous check every direction strikes again!
+            // Update the approate corner in the bounding box
+            if (this.resizeDirections.top) {
+                resizeBoundingBox.y += relativePosition.y;
+            } else if (this.resizeDirections.bottom) {
+                resizeBoundingBox.height += relativePosition.y;
+            }
+            if (this.resizeDirections.left) {
+                resizeBoundingBox.x += relativePosition.x;
+            } else if (this.resizeDirections.right) {
+                // Does this really works?
+                resizeBoundingBox.width += relativePosition.x;
+            }
+
+            // Finally, call the resize method that update the size.
+            // We probally do not want to scale, thats ugly, but more simple
+            this.selectedElement.resize(resizeBoundingBox);
+
+        // Here we just check if we can resize, to update mouse cursor
         } else {
             const shouldResize = this.checkInsisideResize(pos);
-            this.editor.svgElement.classList.remove('cur-rsnesw', 'cur-rsnwse', 'cur-rsns', 'cur-rsew');
+            this.editor.svgElement.classList.remove(
+                'cur-rsnesw', 'cur-rsnwse', 'cur-rsns', 'cur-rsew');
             if (shouldResize != false) {
                 if (shouldResize.left || shouldResize.right) {
                     if (shouldResize.top) {
