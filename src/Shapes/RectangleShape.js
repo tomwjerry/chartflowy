@@ -19,7 +19,6 @@ export default class RectangleShape extends BaseShape {
     }
 
     resize(newSize) {
-        console.log(newSize);
         const beforeBBox = this.corrospondingShape.getBBox();
         this.corrospondingShape.setAttribute('x', beforeBBox.x + newSize.x);
         this.corrospondingShape.setAttribute('width',
