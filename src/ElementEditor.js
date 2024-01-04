@@ -37,19 +37,20 @@ export default class ElementEditor {
         this.clearSelection();
         switch (datashape) {
             case 'rect':
-                this.selectedElement = new RectangleShape({ width: '100', height: '50' });
+                this.selectedElement = new RectangleShape({ width: 100, height: 60 });
                 break;
             case 'roundrect':
-                this.selectedElement = new RectangleShape({ width: '100', height: '60', rx: '15' });
+                this.selectedElement = new RectangleShape({
+                    width: 100, height: 60, rx: 15 });
                 break;
             case 'rhomb':
-                this.selectedElement = new RhombShape({ width: '100', height: '100' });
+                this.selectedElement = new RhombShape({ width: 100, height: 100 });
                 break;
             case 'circle':
-                this.selectedElement = new EllipseShape({ width: '100', height: '100' });
+                this.selectedElement = new EllipseShape({ width: 100, height: 100 });
                 break;
             case 'ellipse':
-                this.selectedElement = new EllipseShape({ width: '100', height: '60' });
+                this.selectedElement = new EllipseShape({ width: 100, height: 60 });
                 break;
             default:
                 break;
@@ -100,7 +101,7 @@ export default class ElementEditor {
                 corner.setAttribute('class', 'resize-handle corner');
                 corner.setAttribute('cx', handles[i].x);
                 corner.setAttribute('cy', handles[i].y);
-                corner.setAttribute('r', '5');
+                corner.setAttribute('r', 5);
                 svgGroup.appendChild(corner);
             }
         }
@@ -112,9 +113,9 @@ export default class ElementEditor {
     checkInsisideResize(pos) {
         if (this.selectedElement) {
             const tolerance = 5;
-            const elementBBox = this.selectedElement.getCorropspondingShape().getBBox();
-            const actualPos = this.selectedElement
-                .getCorropspondingShape().getBoundingClientRect();
+            const shape = this.selectedElement.getCorropspondingShape();
+            const elementBBox = shape.getBBox();
+            const actualPos = shape.getBoundingClientRect();
             const resizeBounds = {
                 minLeft: actualPos.x - tolerance,
                 minTop: actualPos.y - tolerance,
@@ -152,6 +153,28 @@ export default class ElementEditor {
         if (checkResizeDir != false) {
             this.editor.setCurrentCommand('resize');
             this.resizeDirections = checkResizeDir;
+            const shapeToResize = this.selectedElement
+                .getCorropspondingShape();
+            const resizePositionBox =
+                shapeToResize.getBoundingClientRect();
+            const resizeBoundingBox = shapeToResize.getBBox();
+            const translateToParse = shapeToResize.parentNode.
+                getAttribute('transform');
+            const beforeTranslate = /translate\(\s*([^\s,)]+)[ ,]([^\s,)]+)/.exec(
+                translateToParse);
+            this.selectedElement.oldBBox = {
+                x: resizeBoundingBox.x,
+                y: resizeBoundingBox.y,
+                width: resizeBoundingBox.width,
+                height: resizeBoundingBox.height,
+                absoluteX: resizePositionBox.x,
+                absoluteY: resizePositionBox.y,
+                absoluteWidth: resizePositionBox.width,
+                absoluteHeight: resizePositionBox.height,
+                translateX: parseFloat(beforeTranslate[1]),
+                translateY: parseFloat(beforeTranslate[2])
+            };
+            console.log(this.selectedElement.oldBBox);
             
             return;
         }
@@ -175,7 +198,7 @@ export default class ElementEditor {
         if (currentCommand == 'create' ||
             currentCommand == 'move') {
             const shape = this.selectedElement.getCorropspondingShape().parentNode;
-            shape.setAttribute('transform', 'translate(' + pos.x + ', ' + pos.y + ')');
+            shape.setAttribute('transform', 'translate(' + pos.x + ',' + pos.y + ')');
 
             if (this.shouldCreate) {
                 this.shouldCreate = false;
@@ -193,33 +216,40 @@ export default class ElementEditor {
             // need to combine it with SVG BBox
             // We need to convert to relative corridates
             // (isnt scale n' transform more simple?)
-            const resizePositionBox = this.selectedElement
-                .getCorropspondingShape().getBoundingClientRect();
-            const resizeBoundingBox = this.selectedElement
-                .getCorropspondingShape().getBBox();
+            const shapeToResize = this.selectedElement
+                .getCorropspondingShape();
+            const oldBBox = this.selectedElement.oldBBox;
+            
             const relativeResizePositionBox = {
-                x: 0,
-                y: 0,
-                width: 0,
-                height: 0
+                x: oldBBox.translateX,
+                y: oldBBox.translateY,
+                width: oldBBox.width,
+                height: oldBBox.height
             };
 
             // Second, we have saved the resize direction, so yes
             // the infameous check every direction strikes again!
             // Update the approate corner in the bounding box
             if (this.resizeDirections.top) {
-                relativeResizePositionBox.y = pos.y - resizePositionBox.y;
+                relativeResizePositionBox.height = oldBBox.height +
+                    oldBBox.absoluteY - pos.y;
+                relativeResizePositionBox.y = pos.y + (relativeResizePositionBox.height / 2);
             } else if (this.resizeDirections.bottom) {
-                relativeResizePositionBox.height =
-                    pos.y - resizePositionBox.y - resizeBoundingBox.height;
+                /*relativeResizePositionBox.height =
+                    pos.y - resizePositionBox.y;*/
             }
             if (this.resizeDirections.left) {
-                relativeResizePositionBox.x = pos.x - resizePositionBox.x;
+                relativeResizePositionBox.width = oldBBox.width +
+                    oldBBox.absoluteX - pos.x;
+                relativeResizePositionBox.x = pos.x + (relativeResizePositionBox.width / 2);
             } else if (this.resizeDirections.right) {
-                // Does this really works?
-                relativeResizePositionBox.width =
-                    pos.x - resizePositionBox.x - resizeBoundingBox.width;
+                relativeResizePositionBox.width = oldBBox.width + oldBBox.absoluteX - pos.x;
             }
+
+            shapeToResize.parentNode.
+                setAttribute('transform', 'translate(' +
+                    relativeResizePositionBox.x + ',' +
+                    relativeResizePositionBox.y + ')');
 
             // Finally, call the resize method that update the size.
             // We probally do not want to scale, thats ugly, but more simple

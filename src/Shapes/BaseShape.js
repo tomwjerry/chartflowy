@@ -7,6 +7,8 @@ export default class BaseShape {
     recomendedConnections;
     // Arrary of all currently paths lines
     currentlyConnections;
+    
+    oldBBox;
 
     constructor() {
         this.recomendedConnections = [];

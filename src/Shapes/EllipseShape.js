@@ -15,15 +15,7 @@ export default class EllipseShape extends BaseShape {
     }
 
     resize(newSize) {
-        const beforeBBox = this.corrospondingShape.getBBox();
-        
-        this.corrospondingShape.setAttribute('cx',
-            beforeBBox.x + newSize.x + ((beforeBBox.width + newSize.width) / 2));
-        this.corrospondingShape.setAttribute('rx',
-            (((beforeBBox.width + newSize.width) / 2)) - newSize.x);
-        this.corrospondingShape.setAttribute('cy',
-            beforeBBox.y + newSize.y + ((beforeBBox.height + newSize.height) / 2));
-        this.corrospondingShape.setAttribute('ry',
-            (((beforeBBox.height + newSize.height) / 2)) - newSize.y);
+        this.corrospondingShape.setAttribute('rx', newSize.width / 2);
+        this.corrospondingShape.setAttribute('ry', newSize.height / 2);
     }
 }
