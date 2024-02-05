@@ -64,3 +64,25 @@ html, body {
     stroke-width: 1;
     fill: #ffffff;
 }
+
+/* Texteditor */
+.svgtexteditor {
+    position: absolute;
+}
+
+.svgtexteditor .input {
+    border: none;
+    outline: none;
+    display: table-cell;
+    vertical-align: middle;
+    text-align: center;
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    resize: none;
+}
+
+.svgtexteditor .input:focus {
+    border: none;
+    outline: none;
+}

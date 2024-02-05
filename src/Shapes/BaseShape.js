@@ -3,6 +3,7 @@
 export default class BaseShape {
     // What SVG shape this refers to, should be a direct reference
     corrospondingShape;
+    corrospondingShapeID;
     // Array of recomendend connections, positions to connect paths to
     recomendedConnections;
     // Arrary of all currently paths lines

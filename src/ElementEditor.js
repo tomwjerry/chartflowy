@@ -63,6 +63,7 @@ export default class ElementEditor {
         svgShape.setAttribute('stroke', '#000000');
         svgShape.setAttribute('fill', '#ffffff');
         svgShape.setAttribute('id', eleid);
+        this.selectedElement.corrospondingShapeID = eleid;
 
         this.nextid++;
         this.elementLookup.set(eleid, this.listOfElements.length);
@@ -147,10 +148,37 @@ export default class ElementEditor {
         return false;
     }
 
+    setSelectedElementText() {
+        const enteredText = this.editor.svgElement.parentNode
+            .querySelector('.svgtexteditor');
+
+        if (enteredText) {
+            if (this.selectedElement) {
+                const selPar = this.selectedElement.getCorropspondingShape().parentNode;
+                let textElement = selPar.querySelector('text');
+                if (!textElement) {
+                    textElement = Util.makeSVGElement('text');
+                    selPar.appendChild(textElement);
+                }
+                const textLines = enteredText.querySelector('.input')
+                    .innerText.split('\n');
+                for (const tl of textLines) {
+                    const textrow = Util.makeSVGElement('tspan');
+                    textrow.setAttribute('dy', '1em');
+                    textrow.setAttribute('x', 0);
+                    textrow.textContent = tl;
+                    textElement.appendChild(textrow);
+                }
+            }
+            enteredText.remove();
+        }
+    }
+
     positionalPress(ev, pos) {
         // If we press the handles
         const checkResizeDir = this.checkInsisideResize(pos);
         if (checkResizeDir != false) {
+            this.setSelectedElementText();
             this.editor.setCurrentCommand('resize');
             this.resizeDirections = checkResizeDir;
             const shapeToResize = this.selectedElement
@@ -174,11 +202,12 @@ export default class ElementEditor {
                 translateX: parseFloat(beforeTranslate[1]),
                 translateY: parseFloat(beforeTranslate[2])
             };
-            console.log(this.selectedElement.oldBBox);
             
             return;
         }
 
+        const oldSelected = this.selectedElement;
+        this.setSelectedElementText();
         this.selectedElement = null;
         this.clearSelection();
         if (this.elementLookup.has(ev.target.id)) {
@@ -186,6 +215,36 @@ export default class ElementEditor {
                 this.listOfElements[this.elementLookup.get(ev.target.id)];
             this.doSelectElement();
             this.editor.setCurrentCommand('move');
+        }
+
+        // Edit text
+        if (oldSelected && oldSelected == this.selectedElement) {
+            let textEdit = this.editor.svgElement.parentNode.querySelector('.svgtexteditor');
+            if (textEdit) {
+                if (textEdit.dataset.currentEdit != oldSelected.corrospondingShapeID) {
+                    textEdit.remove();
+                    textEdit = false;
+                }
+            }
+            
+            if (!textEdit) {
+                textEdit = document.createElement('div');
+                textEdit.className = 'svgtexteditor';
+                const shapeCentre = this.selectedElement
+                    .getCorropspondingShape().getBoundingClientRect();
+                textEdit.style.left = shapeCentre.x + 'px';
+                textEdit.style.top = shapeCentre.y + 'px';
+                const inputInner = document.createElement('div');
+                inputInner.contentEditable = true;
+                inputInner.className = 'input';
+                inputInner.style.width = shapeCentre.width + 'px';
+                inputInner.style.height = shapeCentre.height + 'px';
+                textEdit.appendChild(inputInner);
+                this.editor.svgElement.parentNode.appendChild(textEdit);
+                setTimeout(() => {
+                    inputInner.focus();
+                });
+            }
         }
     }
 
