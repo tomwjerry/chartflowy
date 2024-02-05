@@ -231,19 +231,18 @@ export default class ElementEditor {
             // the infameous check every direction strikes again!
             // Update the approate corner in the bounding box
             if (this.resizeDirections.top) {
-                relativeResizePositionBox.height = oldBBox.height +
-                    oldBBox.absoluteY - pos.y;
+                relativeResizePositionBox.height = oldBBox.height + oldBBox.absoluteY - pos.y;
                 relativeResizePositionBox.y = pos.y + (relativeResizePositionBox.height / 2);
             } else if (this.resizeDirections.bottom) {
-                /*relativeResizePositionBox.height =
-                    pos.y - resizePositionBox.y;*/
+                relativeResizePositionBox.height = pos.y - oldBBox.absoluteY;
+                relativeResizePositionBox.y = pos.y - (relativeResizePositionBox.height / 2);
             }
             if (this.resizeDirections.left) {
-                relativeResizePositionBox.width = oldBBox.width +
-                    oldBBox.absoluteX - pos.x;
+                relativeResizePositionBox.width = oldBBox.width + oldBBox.absoluteX - pos.x;
                 relativeResizePositionBox.x = pos.x + (relativeResizePositionBox.width / 2);
             } else if (this.resizeDirections.right) {
-                relativeResizePositionBox.width = oldBBox.width + oldBBox.absoluteX - pos.x;
+                relativeResizePositionBox.width = pos.x - oldBBox.absoluteX;
+                relativeResizePositionBox.x = pos.x - (relativeResizePositionBox.width / 2);
             }
 
             shapeToResize.parentNode.
