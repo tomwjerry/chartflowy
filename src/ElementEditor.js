@@ -156,19 +156,23 @@ export default class ElementEditor {
             if (this.selectedElement) {
                 const selPar = this.selectedElement.getCorropspondingShape().parentNode;
                 let textElement = selPar.querySelector('text');
-                if (!textElement) {
+                if (textElement) {
+                    textElement.textContent = '';
+                } else {
                     textElement = Util.makeSVGElement('text');
+                    textElement.setAttribute('text-anchor', 'middle');
                     selPar.appendChild(textElement);
                 }
                 const textLines = enteredText.querySelector('.input')
                     .innerText.split('\n');
-                for (const tl of textLines) {
+                for (let i = 0; i < textLines.length; i++) {
                     const textrow = Util.makeSVGElement('tspan');
-                    textrow.setAttribute('dy', '1em');
+                    textrow.setAttribute('dy', (i > 0 ? 1 : 0.41) + 'em');
                     textrow.setAttribute('x', 0);
-                    textrow.textContent = tl;
+                    textrow.textContent = textLines[i];
                     textElement.appendChild(textrow);
                 }
+                textElement.setAttribute('y', (1 - textLines.length / 2) + 'em');
             }
             enteredText.remove();
         }
@@ -207,7 +211,9 @@ export default class ElementEditor {
         }
 
         const oldSelected = this.selectedElement;
+        // On click we set currently typed text
         this.setSelectedElementText();
+        // Change what shape is selected
         this.selectedElement = null;
         this.clearSelection();
         if (this.elementLookup.has(ev.target.id)) {
@@ -227,11 +233,14 @@ export default class ElementEditor {
                 }
             }
             
+            // Create a text editor
             if (!textEdit) {
                 textEdit = document.createElement('div');
                 textEdit.className = 'svgtexteditor';
-                const shapeCentre = this.selectedElement
-                    .getCorropspondingShape().getBoundingClientRect();
+                const corshape = this.selectedElement
+                    .getCorropspondingShape();
+                const shapeCentre = corshape.getBoundingClientRect();
+                // Position the text editor
                 textEdit.style.left = shapeCentre.x + 'px';
                 textEdit.style.top = shapeCentre.y + 'px';
                 const inputInner = document.createElement('div');
@@ -239,8 +248,23 @@ export default class ElementEditor {
                 inputInner.className = 'input';
                 inputInner.style.width = shapeCentre.width + 'px';
                 inputInner.style.height = shapeCentre.height + 'px';
+
+                // If we already have text in the shape, put the text as input value
+                const textele = corshape.parentNode.querySelector('text');
+                if (textele) {
+                    const textspans = textele.querySelectorAll('tspan');
+                    for (let i = 0; i < textspans.length; i++) {
+                        if (i > 0) {
+                            inputInner.innerHTML += '<br>';
+                        }
+                        inputInner.innerHTML += textspans[i].textContent;
+                    }
+                    textele.textContent = '';
+                }
+
                 textEdit.appendChild(inputInner);
                 this.editor.svgElement.parentNode.appendChild(textEdit);
+                // Focus on the editor so you can type
                 setTimeout(() => {
                     inputInner.focus();
                 });

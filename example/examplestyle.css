@@ -65,6 +65,11 @@ html, body {
     fill: #ffffff;
 }
 
+/* This is important to select element through text */
+text, tspan {
+    pointer-events: none;
+}
+
 /* Texteditor */
 .svgtexteditor {
     position: absolute;
