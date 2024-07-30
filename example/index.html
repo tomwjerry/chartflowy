@@ -31,10 +31,25 @@
                     data-shape="ellipse"><svg class="icon">
                     <use xlink:href="svgsprites.svg#ellipse" />
                 </svg></button>
+                <button type="button" class="toolbox-button"
+                    data-tool="undo"><svg class="icon">
+                    <use xlink:href="svgsprites.svg#undo" />
+                </svg></button>
+                <button type="button" class="toolbox-button"
+                    data-tool="redo"><svg class="icon">
+                    <use xlink:href="svgsprites.svg#redo" />
+                </svg></button>
             </aside>
             <div>
                 <aside id="toolbox"></aside>
-                <svg id="editsvg"></svg>
+                <svg id="editsvg">
+                    <radialGradient id="connectorGradiant">
+                        <stop offset="0%" stop-color="#36cbf0" />
+                        <stop offset="60%" stop-color="#36cbf0" />
+                        <stop offset="70%" stop-color="#ffffff" />
+                        <stop offset="100%" stop-color="#ffffff" />
+                    </radialGradient>
+                </svg>
             </div>
             <aside id="propertybox"></aside>
         </main>

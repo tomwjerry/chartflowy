@@ -3,6 +3,7 @@
 import EllipseShape from './Shapes/EllipseShape';
 import RectangleShape from './Shapes/RectangleShape';
 import RhombShape from './Shapes/RhombShape';
+import ConnectionLine from './Shapes/ConnectionLine';
 
 import Util from './Util';
 
@@ -52,6 +53,9 @@ export default class ElementEditor {
             case 'ellipse':
                 this.selectedElement = new EllipseShape({ width: 100, height: 60 });
                 break;
+            case 'connectionline':
+                this.selectedElement = new ConnectionLine({ width: 60, height: 60 });
+                break;
             default:
                 break;
         }
@@ -74,37 +78,84 @@ export default class ElementEditor {
     }
 
     clearSelection() {
-        const oldSelections = this.workArea.querySelectorAll('.resize-handle');
+        const oldSelections = this.workArea.querySelectorAll('.resize-handle, .connector');
 
         for (let rmSel of oldSelections) {
             rmSel.remove();
         }
     }
 
+    /**
+     * Selects element, yeah the element is already selected so draw some borders
+     * around it. Make resize handles.
+     */
     doSelectElement() {
-        const svgGroup = this.selectedElement.getCorropspondingShape().parentNode;
-        if (!svgGroup.querySelector('.resize-handle')) {
-            // Make selection borders and corners
-            const handles = this.selectedElement.getResizeHandles();
-
-            for (let i = 0; i < handles.length; i++) {
-                const border = Util.makeSVGElement('line');
-                border.setAttribute('class', 'resize-handle edge');
-                border.setAttribute('x1', handles[i].x);
-                border.setAttribute('y1', handles[i].y);
-                border.setAttribute('x2', handles[(i + 1) % handles.length].x);
-                border.setAttribute('y2', handles[(i + 1) % handles.length].y);
-                svgGroup.appendChild(border);
+        const corshape = this.selectedElement.getCorropspondingShape();
+        const svgGroup = corshape.parentNode;
+        // Ofcourse, we dont have to do it if there already are resize handlers
+        if (svgGroup.querySelector('.resize-handle')) {
+            return;
+        }
+        const boundingBox = corshape.getBBox();
+        // Make selection borders and corners
+        const handles = [
+            {
+                x: boundingBox.x,
+                y: boundingBox.y,
+                cx: boundingBox.x + boundingBox.width / 2,
+                cy: boundingBox.y - 15
+            },
+            {
+                x: boundingBox.x + boundingBox.width,
+                y: boundingBox.y,
+                cx: boundingBox.x + boundingBox.width + 15,
+                cy: boundingBox.y + boundingBox.height / 2
+            },
+            {
+                x: boundingBox.x + boundingBox.width,
+                y: boundingBox.y + boundingBox.height,
+                cx: boundingBox.x + boundingBox.width / 2,
+                cy: boundingBox.y + boundingBox.height + 15
+            },
+            {
+                x: boundingBox.x,
+                y: boundingBox.y + boundingBox.height,
+                cx: boundingBox.x - 15,
+                cy: boundingBox.y + boundingBox.height / 2
             }
+        ];
 
-            for (let i = 0; i < handles.length; i++) {
-                const corner = Util.makeSVGElement('circle');
-                corner.setAttribute('class', 'resize-handle corner');
-                corner.setAttribute('cx', handles[i].x);
-                corner.setAttribute('cy', handles[i].y);
-                corner.setAttribute('r', 5);
-                svgGroup.appendChild(corner);
-            }
+        // Resize borders around object, also put connector handles in the middle
+        for (let i = 0; i < handles.length; i++) {
+            const border = Util.makeSVGElement('line');
+            const x2 = handles[(i + 1) % handles.length].x;
+            const y2 = handles[(i + 1) % handles.length].y;
+            border.setAttribute('class', 'resize-handle edge');
+            border.setAttribute('x1', handles[i].x);
+            border.setAttribute('y1', handles[i].y);
+            border.setAttribute('x2', x2);
+            border.setAttribute('y2', y2);
+            svgGroup.appendChild(border);
+
+            // Connector handle
+            const conhandle = Util.makeSVGElement('circle');
+            conhandle.setAttribute('class', 'connector');
+            conhandle.setAttribute('cx', handles[i].cx);
+            conhandle.setAttribute('cy', handles[i].cy);
+            conhandle.setAttribute('r', 5);
+            svgGroup.appendChild(conhandle);
+        }
+
+        // Resize corners, we need to have an extra loop just to enure
+        // they are in top of the borders.
+        // Ofcourse another way would be to offset borders with corner radius
+        for (let i = 0; i < handles.length; i++) {
+            const corner = Util.makeSVGElement('circle');
+            corner.setAttribute('class', 'resize-handle corner');
+            corner.setAttribute('cx', handles[i].x);
+            corner.setAttribute('cy', handles[i].y);
+            corner.setAttribute('r', 5);
+            svgGroup.appendChild(corner);
         }
     }
 
@@ -148,52 +199,72 @@ export default class ElementEditor {
         return false;
     }
 
+    /**
+     * Put test in shape
+     */
     setSelectedElementText() {
         const enteredText = this.editor.svgElement.parentNode
             .querySelector('.svgtexteditor');
 
-        if (enteredText) {
-            if (this.selectedElement) {
-                const selPar = this.selectedElement.getCorropspondingShape().parentNode;
-                let textElement = selPar.querySelector('text');
-                if (textElement) {
-                    textElement.textContent = '';
-                } else {
-                    textElement = Util.makeSVGElement('text');
-                    textElement.setAttribute('text-anchor', 'middle');
-                    selPar.appendChild(textElement);
-                }
-                const textLines = enteredText.querySelector('.input')
-                    .innerText.split('\n');
-                for (let i = 0; i < textLines.length; i++) {
-                    const textrow = Util.makeSVGElement('tspan');
-                    textrow.setAttribute('dy', (i > 0 ? 1 : 0.41) + 'em');
-                    textrow.setAttribute('x', 0);
-                    textrow.textContent = textLines[i];
-                    textElement.appendChild(textrow);
-                }
-                textElement.setAttribute('y', (1 - textLines.length / 2) + 'em');
-            }
-            enteredText.remove();
+        if (!enteredText) {
+            return;
         }
+        if (this.selectedElement) {
+            const selPar = this.selectedElement.getCorropspondingShape().parentNode;
+            let textElement = selPar.querySelector('text');
+            if (textElement) {
+                textElement.textContent = '';
+            } else {
+                // Create text element if it doesn't exists
+                textElement = Util.makeSVGElement('text');
+                textElement.setAttribute('text-anchor', 'middle');
+                selPar.appendChild(textElement);
+            }
+            const textLines = enteredText.querySelector('.input')
+                .innerText.split('\n');
+            for (let i = 0; i < textLines.length; i++) {
+                const textrow = Util.makeSVGElement('tspan');
+                textrow.setAttribute('dy', (i > 0 ? 1 : 0.41) + 'em');
+                textrow.setAttribute('x', 0);
+                textrow.textContent = textLines[i];
+                textElement.appendChild(textrow);
+            }
+            textElement.setAttribute('y', (1 - textLines.length / 2) + 'em');
+        }
+        enteredText.remove();
     }
 
+    /**
+     * This function handles: select shape, start/stop move, start/stop resize,
+     * start/stop text edit and start/stap draw connector.
+     * 
+     * @param {*} ev 
+     * @param {*} pos 
+     * @returns 
+     */
     positionalPress(ev, pos) {
+        // Resize
         // If we press the handles
         const checkResizeDir = this.checkInsisideResize(pos);
         if (checkResizeDir != false) {
             this.setSelectedElementText();
             this.editor.setCurrentCommand('resize');
+            // Save what handle we used for resizing
             this.resizeDirections = checkResizeDir;
+
             const shapeToResize = this.selectedElement
                 .getCorropspondingShape();
             const resizePositionBox =
                 shapeToResize.getBoundingClientRect();
             const resizeBoundingBox = shapeToResize.getBBox();
+
+            // The position we have before
             const translateToParse = shapeToResize.parentNode.
                 getAttribute('transform');
             const beforeTranslate = /translate\(\s*([^\s,)]+)[ ,]([^\s,)]+)/.exec(
                 translateToParse);
+            
+            // Save our orginal position here
             this.selectedElement.oldBBox = {
                 x: resizeBoundingBox.x,
                 y: resizeBoundingBox.y,
@@ -210,12 +281,39 @@ export default class ElementEditor {
             return;
         }
 
-        const oldSelected = this.selectedElement;
+        // Connect
+        if (ev.target.classList.contains('connector')) {
+            const connector = ev.target;
+            const connectorPos = connector.getBoundingClientRect();
+            this.selectcreate('connectionline');
+            const connectorline = this.selectedElement.getCorropspondingShape();
+            const connectorlineContainer = connectorline.parentNode;
+            const cx = parseInt(connector.getAttribute('cx'));
+            const cy = parseInt(connector.getAttribute('cy'));
+            if (cx != 0) {
+                connectorPos.x += cx > 0 ? -10 : 10;
+            }
+
+            if (cy != 0) {
+                connectorPos.y += cy > 0 ? -10 : 10;
+            }
+            connectorlineContainer.setAttribute('transform', 'translate(' +
+                connectorPos.x + ',' + connectorPos.y + ')');
+            connectorline.setAttribute('d', 'M 0 0 L 10 10');
+            
+            this.editor.setCurrentCommand('connect');
+        }
+
         // On click we set currently typed text
         this.setSelectedElementText();
+
+        const oldSelected = this.selectedElement;
         // Change what shape is selected
         this.selectedElement = null;
         this.clearSelection();
+
+        // Find the shapes in the list of shapes, then select new!
+        // TODO: If it is same element we dont need to do this
         if (this.elementLookup.has(ev.target.id)) {
             this.selectedElement =
                 this.listOfElements[this.elementLookup.get(ev.target.id)];
@@ -270,6 +368,12 @@ export default class ElementEditor {
                 });
             }
         }
+
+        // Connectors
+        if (ev.target.classList.contains('connector')) {
+            this.editor.setCurrentCommand('connect');
+            
+        }
     }
 
     positionalMove(pos) {
@@ -281,17 +385,18 @@ export default class ElementEditor {
         if (currentCommand == 'create' ||
             currentCommand == 'move') {
             const shape = this.selectedElement.getCorropspondingShape().parentNode;
+            const oldAttributes = Array.from(shape.attributes);
             shape.setAttribute('transform', 'translate(' + pos.x + ',' + pos.y + ')');
 
             if (this.shouldCreate) {
                 this.shouldCreate = false;
                 this.undoRedo.addHistory(new CreateCommand(
-                    this.selectedElement, this.workArea));
+                    shape, this.workArea));
             } else {
                 this.undoRedo.addHistory(new ModifyCommand(
-                    this.selectedElement, this.selectedElement.attributes));
+                    shape, Array.from(shape.attributes), oldAttributes));
             }
-
+        
         // If we actively resize
         } else if (currentCommand == 'resize') {
             // First we want to get the actual boundingbox

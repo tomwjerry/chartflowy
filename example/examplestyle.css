@@ -14,7 +14,7 @@ html, body {
     left: 0;
     top: 0;
     bottom: 0;
-    width: 5rem;
+    width: 3rem;
     height: 100vh;
 }
 
@@ -22,7 +22,7 @@ html, body {
     border-radius: 0;
     background-color: transparent;
     border: 1px solid #000000;
-    height: 4rem;
+    height: 3rem;
 }
 
 #createbox button svg {
@@ -40,6 +40,7 @@ html, body {
 }
 
 /* Styles inside SVG - break out to an own css? */
+/* Cursors */
 #editsvg.cur-rsnesw {
     cursor: nesw-resize;
 }
@@ -53,6 +54,7 @@ html, body {
     cursor: ew-resize;
 }
 
+/* Resize handles */
 .resize-handle.edge {
     stroke: #36cbf0;
     stroke-dasharray: 5 5;
@@ -63,6 +65,15 @@ html, body {
     stroke: #49abce;
     stroke-width: 1;
     fill: #ffffff;
+}
+
+/* Connector handle */
+.connector {
+    fill: url(#connectorGradiant);
+}
+
+.connector:hover {
+    fill: #36cbf0;
 }
 
 /* This is important to select element through text */

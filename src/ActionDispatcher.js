@@ -61,14 +61,15 @@ export class ModifyCommand extends BaseCommand {
     attributes;
     oldAttributes;
 
-    constructor(item, attributes) {
+    constructor(item, attributes, oldAttributes) {
         super();
         this.item = item;
         this.attributes = attributes;
+        this.oldAttributes = oldAttributes;
     }
 
     execute() {
-        this.oldAttributes = JSON.stringify(this.item.attributes);
+        this.oldAttributes = this.item.attributes;
 
         for (let attr of this.attributes) {
             this.item.setAttribute(attr.name, attr.value);
@@ -76,7 +77,7 @@ export class ModifyCommand extends BaseCommand {
     }
 
     undo() {
-        const setOldAttributes = JSON.parse(this.oldAttributes);
+        const setOldAttributes = this.oldAttributes;
 
         for (let attr of setOldAttributes) {
             this.item.setAttribute(attr.name, attr.value);

@@ -58,6 +58,12 @@ export class FlowchartEditor {
                     this.currentCommand = 'create';
                     this.elementEditorObj.selectcreate(ev.target.dataset.shape);
                 }
+            } else if (ev.target.classList.contains('toolbox-button')) {
+                if (ev.target.dataset.tool = 'undo') {
+                    this.UndoRedoObj.undo();
+                } else if (ev.target.dataset.tool = 'redo') {
+                    this.UndoRedoObj.redo();
+                }
             } else {
                 this.elementEditorObj.positionalPress(ev, new DOMPoint(ev.clientX, ev.clientY));
             }
