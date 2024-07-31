@@ -7,6 +7,8 @@ export default class RhombShape extends BaseShape {
     constructor(attr) {
         super();
 
+        this.name = ' RhombShape';
+
         this.corrospondingShape = Util.makeSVGElement('path');
         this.corrospondingShape.setAttribute('d', 'M 0 ' + ' ' + (-(attr.height / 2)) +
             ' L ' + (attr.width / 2) + ' 0' +

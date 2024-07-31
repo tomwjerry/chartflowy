@@ -7,6 +7,8 @@ export default class EllipseShape extends BaseShape {
     constructor(attr) {
         super();
 
+        this.name = 'EllipseShape';
+
         this.corrospondingShape = Util.makeSVGElement('ellipse');
         this.corrospondingShape.setAttribute('cx', 0);
         this.corrospondingShape.setAttribute('cy', 0);

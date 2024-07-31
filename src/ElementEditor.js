@@ -90,6 +90,9 @@ export default class ElementEditor {
      * around it. Make resize handles.
      */
     doSelectElement() {
+        if (this.selectedElement.name == 'ConnectionLine') {
+            return;
+        }
         const corshape = this.selectedElement.getCorropspondingShape();
         const svgGroup = corshape.parentNode;
         // Ofcourse, we dont have to do it if there already are resize handlers
@@ -250,6 +253,33 @@ export default class ElementEditor {
         return shapeArray;
     }
 
+    getAllElementBounds(shape) {
+        const shapeToResize = shape
+            .getCorropspondingShape();
+        const resizePositionBox =
+            shapeToResize.getBoundingClientRect();
+        const resizeBoundingBox = shapeToResize.getBBox();
+
+        // The position we have before
+        const translateToParse = shapeToResize.parentNode.
+            getAttribute('transform');
+        const beforeTranslate = /translate\(\s*([^\s,)]+)[ ,]([^\s,)]+)/.exec(
+            translateToParse);
+
+        return {
+            x: resizeBoundingBox.x,
+            y: resizeBoundingBox.y,
+            width: resizeBoundingBox.width,
+            height: resizeBoundingBox.height,
+            absoluteX: resizePositionBox.x,
+            absoluteY: resizePositionBox.y,
+            absoluteWidth: resizePositionBox.width,
+            absoluteHeight: resizePositionBox.height,
+            translateX: parseFloat(beforeTranslate[1]),
+            translateY: parseFloat(beforeTranslate[2])
+        };
+    }
+
     /**
      * This function handles: select shape, start/stop move, start/stop resize,
      * start/stop text edit and start/stap draw connector.
@@ -275,31 +305,8 @@ export default class ElementEditor {
             // Save what handle we used for resizing
             this.resizeDirections = checkResizeDir;
 
-            const shapeToResize = this.selectedElement
-                .getCorropspondingShape();
-            const resizePositionBox =
-                shapeToResize.getBoundingClientRect();
-            const resizeBoundingBox = shapeToResize.getBBox();
-
-            // The position we have before
-            const translateToParse = shapeToResize.parentNode.
-                getAttribute('transform');
-            const beforeTranslate = /translate\(\s*([^\s,)]+)[ ,]([^\s,)]+)/.exec(
-                translateToParse);
-            
             // Save our orginal position here
-            this.selectedElement.oldBBox = {
-                x: resizeBoundingBox.x,
-                y: resizeBoundingBox.y,
-                width: resizeBoundingBox.width,
-                height: resizeBoundingBox.height,
-                absoluteX: resizePositionBox.x,
-                absoluteY: resizePositionBox.y,
-                absoluteWidth: resizePositionBox.width,
-                absoluteHeight: resizePositionBox.height,
-                translateX: parseFloat(beforeTranslate[1]),
-                translateY: parseFloat(beforeTranslate[2])
-            };
+            this.selectedElement.oldBBox = this.getAllElementBounds(this.selectedElement);
             
             return;
         }
@@ -322,9 +329,11 @@ export default class ElementEditor {
             }
             connectorlineContainer.setAttribute('transform', 'translate(' +
                 connectorPos.x + ',' + connectorPos.y + ')');
-            connectorline.setAttribute('d', 'M 0 0 L 10 10');
+            this.selectedElement.oldBBox = this.getAllElementBounds(this.selectedElement);
             
             this.editor.setCurrentCommand('connect');
+
+            return;
         }
 
         // On click we set currently typed text
@@ -395,11 +404,6 @@ export default class ElementEditor {
                 });
             }
         }
-
-        // Connectors
-        if (ev.target.classList.contains('connector')) {
-            this.editor.setCurrentCommand('connect');
-        }
     }
 
     positionalMove(pos) {
@@ -455,6 +459,7 @@ export default class ElementEditor {
                 relativeResizePositionBox.x = pos.x - (relativeResizePositionBox.width / 2);
             }
 
+            // Translate is more simplier than updating parameters, and just works
             shapeToResize.parentNode.
                 setAttribute('transform', 'translate(' +
                     relativeResizePositionBox.x + ',' +
@@ -464,6 +469,14 @@ export default class ElementEditor {
             // We probally do not want to scale, thats ugly, but more simple
             this.selectedElement.resize(relativeResizePositionBox);
 
+        // Connector line update, actually very similar to resize
+        } else if (currentCommand == 'connect') {
+            const connectorShape = this.selectedElement.getCorropspondingShape();
+            const updatePos = { x: 0, y: 0 };
+            updatePos.x = pos.x - this.selectedElement.oldBBox.translateX;
+            updatePos.y = pos.y - this.selectedElement.oldBBox.translateY;
+            connectorShape.setAttribute('d', 'M 0 0 L ' + updatePos.x + ' ' + updatePos.y);
+            
         // Here we just check if we can resize, to update mouse cursor
         } else {
             const shouldResize = this.checkInsisideResize(pos);

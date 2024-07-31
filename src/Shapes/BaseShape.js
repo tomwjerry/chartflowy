@@ -1,6 +1,7 @@
 'use strict';
 
 export default class BaseShape {
+    name;
     // What SVG shape this refers to, should be a direct reference
     corrospondingShape;
     corrospondingShapeID;

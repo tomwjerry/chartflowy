@@ -7,6 +7,8 @@ export default class RectangleShape extends BaseShape {
     constructor(attr) {
         super();
 
+        this.name = 'RectangleShape';
+
         this.corrospondingShape = Util.makeSVGElement('rect');
         this.corrospondingShape.setAttribute('x', -attr.width / 2);
         this.corrospondingShape.setAttribute('y', -attr.height / 2);
