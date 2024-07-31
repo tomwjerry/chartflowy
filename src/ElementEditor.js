@@ -4,6 +4,7 @@ import EllipseShape from './Shapes/EllipseShape';
 import RectangleShape from './Shapes/RectangleShape';
 import RhombShape from './Shapes/RhombShape';
 import ConnectionLine from './Shapes/ConnectionLine';
+import 'path-data-polyfill';
 
 import Util from './Util';
 
@@ -90,15 +91,30 @@ export default class ElementEditor {
      * around it. Make resize handles.
      */
     doSelectElement() {
-        if (this.selectedElement.name == 'ConnectionLine') {
-            return;
-        }
         const corshape = this.selectedElement.getCorropspondingShape();
         const svgGroup = corshape.parentNode;
+
         // Ofcourse, we dont have to do it if there already are resize handlers
         if (svgGroup.querySelector('.resize-handle')) {
             return;
         }
+
+        // Connector line special case
+        if (this.selectedElement.name == 'ConnectionLine') {
+            const pathpoints = corshape.getPathData();
+            
+            for (const point of pathpoints) {
+                const conhandle = Util.makeSVGElement('circle');
+                conhandle.setAttribute('class', 'resize-handle corner');
+                conhandle.setAttribute('cx', point.values[0]);
+                conhandle.setAttribute('cy', point.values[1]);
+                conhandle.setAttribute('r', 5);
+                svgGroup.appendChild(conhandle);
+            }
+
+            return;
+        }
+        
         const boundingBox = corshape.getBBox();
         // Make selection borders and corners
         const handles = [

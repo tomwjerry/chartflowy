@@ -2,7 +2,7 @@
   "name": "flowy",
   "version": "0.0.1",
   "description": "Yet another Javascript SVG Flowchart Editor",
-  "main": "index.js",
+  "main": "src/FlowchartEditor.js",
   "scripts": {
     "build": "esbuild --bundle --global-name=jssvgflow src/FlowchartEditor.js --outfile=build/jssvgflowedit.js",
     "serve": "esbuild --bundle --global-name=jssvgflow src/FlowchartEditor.js --outfile=example/jssvgflowedit.js --servedir=example"
@@ -11,5 +11,8 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "esbuild": "^0.19.8"
+  },
+  "dependencies": {
+    "path-data-polyfill": "^1.0.6"
   }
 }
