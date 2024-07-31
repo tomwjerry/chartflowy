@@ -32,6 +32,10 @@ export class CreateCommand extends BaseCommand {
         this.item.remove();
         this.item = null;
     }
+
+    checkChange() {
+        return true;
+    }
 }
 
 export class DeleteCommand extends BaseCommand {
@@ -54,6 +58,10 @@ export class DeleteCommand extends BaseCommand {
         this.item = JSON.parse(this.oldItem);
         this.context.appendChild(this.item);
     }
+
+    checkChange() {
+        return true;
+    }
 }
 
 export class ModifyCommand extends BaseCommand {
@@ -66,21 +74,45 @@ export class ModifyCommand extends BaseCommand {
         this.item = item;
         this.attributes = attributes;
         this.oldAttributes = oldAttributes;
+        if (!this.oldAttributes) {
+            this.oldAttributes = [];
+        }
     }
 
     execute() {
-        this.oldAttributes = this.item.attributes;
+        //this.oldAttributes = this.item.attributes;
 
         for (let attr of this.attributes) {
-            this.item.setAttribute(attr.name, attr.value);
+            this.item.setAttribute(attr[0], attr[1]);
         }
     }
 
     undo() {
-        const setOldAttributes = this.oldAttributes;
-
-        for (let attr of setOldAttributes) {
-            this.item.setAttribute(attr.name, attr.value);
+        for (let attr of this.oldAttributes) {
+            this.item.setAttribute(attr[0], attr[1]);
         }
+    }
+
+    checkChange() {
+        if (this.attributes === this.oldAttributes) {
+            return false;
+        }
+        if (this.attributes == null || this.oldAttributes == null) {
+            return true;
+        }
+        if (this.attributes.length !== this.oldAttributes.length) {
+            return true;
+        }
+      
+        for (let i = 0; i < this.attributes.length; i++) {
+            if (this.attributes[i][0] !== this.oldAttributes[i][0]) {
+                return true;
+            }
+            if (this.attributes[i][1] !== this.oldAttributes[i][1]) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

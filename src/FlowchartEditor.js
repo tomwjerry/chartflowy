@@ -59,9 +59,9 @@ export class FlowchartEditor {
                     this.elementEditorObj.selectcreate(ev.target.dataset.shape);
                 }
             } else if (ev.target.classList.contains('toolbox-button')) {
-                if (ev.target.dataset.tool = 'undo') {
+                if (ev.target.dataset.tool == 'undo') {
                     this.UndoRedoObj.undo();
-                } else if (ev.target.dataset.tool = 'redo') {
+                } else if (ev.target.dataset.tool == 'redo') {
                     this.UndoRedoObj.redo();
                 }
             } else {

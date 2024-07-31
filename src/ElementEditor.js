@@ -234,6 +234,22 @@ export default class ElementEditor {
         enteredText.remove();
     }
 
+    getElementAttributes(shape) {
+        const selshape = shape.getCorropspondingShape();
+        const shapeParams = selshape.attributes;
+        const containerParams = selshape.parentNode.attributes;
+        let shapeArray = [[],[]];
+        for (const attr of shapeParams) {
+            shapeArray[0].push([attr.name, attr.value]);
+        }
+
+        for (const attr of containerParams) {
+            shapeArray[1].push([attr.name, attr.value]);
+        }
+
+        return shapeArray;
+    }
+
     /**
      * This function handles: select shape, start/stop move, start/stop resize,
      * start/stop text edit and start/stap draw connector.
@@ -243,6 +259,13 @@ export default class ElementEditor {
      * @returns 
      */
     positionalPress(ev, pos) {
+        // Save old attributes for undo and stuff
+        if (this.selectedElement) {
+            const attrs = this.getElementAttributes(this.selectedElement);
+            this.selectedElement.oldAttributes = attrs[0];
+            this.selectedElement.oldContainerAttributes = attrs[1];
+        }
+
         // Resize
         // If we press the handles
         const checkResizeDir = this.checkInsisideResize(pos);
@@ -319,6 +342,10 @@ export default class ElementEditor {
                 this.listOfElements[this.elementLookup.get(ev.target.id)];
             this.doSelectElement();
             this.editor.setCurrentCommand('move');
+
+            const attrs = this.getElementAttributes(this.selectedElement);
+            this.selectedElement.oldAttributes = attrs[0];
+            this.selectedElement.oldContainerAttributes = attrs[1];
         }
 
         // Edit text
@@ -372,7 +399,6 @@ export default class ElementEditor {
         // Connectors
         if (ev.target.classList.contains('connector')) {
             this.editor.setCurrentCommand('connect');
-            
         }
     }
 
@@ -385,16 +411,12 @@ export default class ElementEditor {
         if (currentCommand == 'create' ||
             currentCommand == 'move') {
             const shape = this.selectedElement.getCorropspondingShape().parentNode;
-            const oldAttributes = Array.from(shape.attributes);
             shape.setAttribute('transform', 'translate(' + pos.x + ',' + pos.y + ')');
 
             if (this.shouldCreate) {
                 this.shouldCreate = false;
                 this.undoRedo.addHistory(new CreateCommand(
                     shape, this.workArea));
-            } else {
-                this.undoRedo.addHistory(new ModifyCommand(
-                    shape, Array.from(shape.attributes), oldAttributes));
             }
         
         // If we actively resize
@@ -475,6 +497,15 @@ export default class ElementEditor {
         if (!this.selectedElement) {
             return;
         }
+        // Save the history
+        const attrs = this.getElementAttributes(this.selectedElement);
+        
+        this.undoRedo.addHistory(new ModifyCommand(
+            this.selectedElement.getCorropspondingShape(),
+            attrs[0], this.selectedElement.oldAttributes));
+        this.undoRedo.addHistory(new ModifyCommand(
+            this.selectedElement.getCorropspondingShape().parentNode,
+            attrs[1], this.selectedElement.oldContainerAttributes));
         // Make resize borders if there are none
         this.doSelectElement();
     }

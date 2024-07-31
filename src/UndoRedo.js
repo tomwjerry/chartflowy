@@ -10,8 +10,12 @@ export default class UndoRedo {
     }
 
     addHistory(command) {
-        this.history.push(command);
-        this.historyIndex = this.history.length - 1;
+        // Do not put same command
+        if (command.checkChange())
+        {
+            this.history.push(command);
+            this.historyIndex = this.history.length - 1;
+        }
     }
 
     undo() {
@@ -19,7 +23,7 @@ export default class UndoRedo {
             this.history[this.historyIndex].undo();
             this.historyIndex--;
             if (this.historyIndex < 0) {
-                this.historyIndex = -1;
+                this.historyIndex = 0;
             }
         }
     }
@@ -28,8 +32,8 @@ export default class UndoRedo {
         if (this.historyIndex < this.history.length) {
             this.history[this.historyIndex].execute();
             this.historyIndex++;
-            if (this.historyIndex > this.history.length) {
-                this.historyIndex = this.history.length;
+            if (this.historyIndex >= this.history.length) {
+                this.historyIndex = this.history.length - 1;
             }
         }
     }

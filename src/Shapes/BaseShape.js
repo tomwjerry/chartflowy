@@ -8,6 +8,8 @@ export default class BaseShape {
     allConnections;
     // Store our orginal position
     oldBBox;
+    oldAttributes;
+    oldContainerAttributes;
 
     constructor() {
         this.recomendedConnections = [];
