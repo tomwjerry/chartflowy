@@ -337,6 +337,15 @@ export default class ElementEditor {
             this.selectedElement.oldContainerAttributes = attrs[1];
         }
 
+        // Modify connection line
+        if (ev.target.classList.contains('line-modify-handle')) {
+            this.editor.setCurrentCommand('connect');
+            this.selectedElement.oldBBox = this.getAllElementBounds(this.selectedElement);
+            this.lineHandleManipulate = ev.target.dataset.pathIndex;
+
+            return;
+        }
+
         // Resize
         // If we press the handles
         const checkResizeDir = this.checkInsisideResize(pos);
@@ -364,11 +373,11 @@ export default class ElementEditor {
             const cy = parseInt(connector.getAttribute('cy'));
 
             if (cx != 0) {
-                connectorPos.x += cx > 0 ? -10 : 10;
+                connectorPos.x += cx > 0 ? -10 : 20;
             }
 
             if (cy != 0) {
-                connectorPos.y += cy > 0 ? -10 : 10;
+                connectorPos.y += cy > 0 ? -10 : 20;
             }
 
             connectorline.setAttribute('d', 'M 0 0 L 0 0'); // Needed to get pathdata
@@ -378,14 +387,6 @@ export default class ElementEditor {
             
             this.editor.setCurrentCommand('connect');
             this.lineHandleManipulate = 1;
-
-            return;
-        }
-
-        if (ev.target.classList.contains('line-modify-handle')) {
-            this.editor.setCurrentCommand('connect');
-            this.selectedElement.oldBBox = this.getAllElementBounds(this.selectedElement);
-            this.lineHandleManipulate = ev.target.dataset.pathIndex;
 
             return;
         }
