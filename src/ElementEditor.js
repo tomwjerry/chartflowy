@@ -17,6 +17,7 @@ export default class ElementEditor {
 
     shouldCreate;
     resizeDirections;
+    lineHandleManipulate;
     selectedElement;
     listOfElements;
     elementLookup;
@@ -31,10 +32,21 @@ export default class ElementEditor {
         this.selectedElement = null;
         this.shouldAddElement = false;
         this.listOfElements = [];
+        this.resizeDirections = {
+            left: false,
+            right: false,
+            top: false,
+            bottom: false
+        };
+        this.lineHandleManipulate = 0;
         this.elementLookup = new Map;
         this.nextid = 0;
     }
 
+    /**
+     * Creates shape
+     * @param {string} datashape 
+     */
     selectcreate(datashape) {
         this.clearSelection();
         switch (datashape) {
@@ -61,25 +73,37 @@ export default class ElementEditor {
                 break;
         }
 
+        // Element around the shape that contains gui elements
         const guiGroup = Util.makeSVGElement('g');
-        const eleid = 'fce_' + this.nextid;
-        const svgShape = this.selectedElement.getCorropspondingShape();
         guiGroup.setAttribute('class', 'gui');
+
+        // Shape itself
+        const svgShape = this.selectedElement.getCorropspondingShape();
+        const eleid = 'fce_' + this.nextid;
         svgShape.setAttribute('stroke', '#000000');
         svgShape.setAttribute('fill', '#ffffff');
         svgShape.setAttribute('id', eleid);
-        this.selectedElement.corrospondingShapeID = eleid;
 
-        this.nextid++;
-        this.elementLookup.set(eleid, this.listOfElements.length);
-        this.listOfElements.push(this.selectedElement);
+        // Put shape in group
         guiGroup.appendChild(svgShape);
         this.workArea.appendChild(guiGroup);
+        
+        // Set lookup tables to find the shape later
+        this.selectedElement.corrospondingShapeID = eleid;
+        this.elementLookup.set(eleid, this.listOfElements.length);
+        this.listOfElements.push(this.selectedElement);
+        
+        // Set some basic modes
         this.shouldCreate = true;
+        this.nextid++;
     }
 
+    /**
+     * Removes selection gui elements
+     */
     clearSelection() {
-        const oldSelections = this.workArea.querySelectorAll('.resize-handle, .connector');
+        const oldSelections = this.workArea.querySelectorAll(
+            '.resize-handle, .connector, .line-modify-handle');
 
         for (let rmSel of oldSelections) {
             rmSel.remove();
@@ -95,7 +119,7 @@ export default class ElementEditor {
         const svgGroup = corshape.parentNode;
 
         // Ofcourse, we dont have to do it if there already are resize handlers
-        if (svgGroup.querySelector('.resize-handle')) {
+        if (svgGroup.querySelector('.resize-handle, .line-modify-handle')) {
             return;
         }
 
@@ -103,11 +127,12 @@ export default class ElementEditor {
         if (this.selectedElement.name == 'ConnectionLine') {
             const pathpoints = corshape.getPathData();
             
-            for (const point of pathpoints) {
+            for (let i = 0; i < pathpoints.length; i++) {
                 const conhandle = Util.makeSVGElement('circle');
-                conhandle.setAttribute('class', 'resize-handle corner');
-                conhandle.setAttribute('cx', point.values[0]);
-                conhandle.setAttribute('cy', point.values[1]);
+                conhandle.dataset.pathIndex = i;
+                conhandle.setAttribute('class', 'line-modify-handle');
+                conhandle.setAttribute('cx', pathpoints[i].values[0]);
+                conhandle.setAttribute('cy', pathpoints[i].values[1]);
                 conhandle.setAttribute('r', 5);
                 svgGroup.appendChild(conhandle);
             }
@@ -219,7 +244,7 @@ export default class ElementEditor {
     }
 
     /**
-     * Put test in shape
+     * Put text in shape
      */
     setSelectedElementText() {
         const enteredText = this.editor.svgElement.parentNode
@@ -334,8 +359,10 @@ export default class ElementEditor {
             this.selectcreate('connectionline');
             const connectorline = this.selectedElement.getCorropspondingShape();
             const connectorlineContainer = connectorline.parentNode;
+
             const cx = parseInt(connector.getAttribute('cx'));
             const cy = parseInt(connector.getAttribute('cy'));
+
             if (cx != 0) {
                 connectorPos.x += cx > 0 ? -10 : 10;
             }
@@ -343,11 +370,22 @@ export default class ElementEditor {
             if (cy != 0) {
                 connectorPos.y += cy > 0 ? -10 : 10;
             }
+
+            connectorline.setAttribute('d', 'M 0 0 L 0 0'); // Needed to get pathdata
             connectorlineContainer.setAttribute('transform', 'translate(' +
                 connectorPos.x + ',' + connectorPos.y + ')');
             this.selectedElement.oldBBox = this.getAllElementBounds(this.selectedElement);
             
             this.editor.setCurrentCommand('connect');
+            this.lineHandleManipulate = 1;
+
+            return;
+        }
+
+        if (ev.target.classList.contains('line-modify-handle')) {
+            this.editor.setCurrentCommand('connect');
+            this.selectedElement.oldBBox = this.getAllElementBounds(this.selectedElement);
+            this.lineHandleManipulate = ev.target.dataset.pathIndex;
 
             return;
         }
@@ -422,12 +460,17 @@ export default class ElementEditor {
         }
     }
 
+    /**
+     * On mouse move
+     * @param {*} pos 
+     */
     positionalMove(pos) {
         if (!this.selectedElement) {
             return;
         }
         const currentCommand = this.editor.getCurrentCommand();
 
+        // Create / move element
         if (currentCommand == 'create' ||
             currentCommand == 'move') {
             const shape = this.selectedElement.getCorropspondingShape().parentNode;
@@ -491,7 +534,9 @@ export default class ElementEditor {
             const updatePos = { x: 0, y: 0 };
             updatePos.x = pos.x - this.selectedElement.oldBBox.translateX;
             updatePos.y = pos.y - this.selectedElement.oldBBox.translateY;
-            connectorShape.setAttribute('d', 'M 0 0 L ' + updatePos.x + ' ' + updatePos.y);
+            const pathdata = connectorShape.getPathData();
+            pathdata[this.lineHandleManipulate].values = [updatePos.x, updatePos.y];
+            connectorShape.setPathData(pathdata); // Apparently needed
             
         // Here we just check if we can resize, to update mouse cursor
         } else {
@@ -522,6 +567,9 @@ export default class ElementEditor {
         }
     }
 
+    /**
+     * Relese mouse position
+     */
     positionalRelease() {
         if (!this.selectedElement) {
             return;

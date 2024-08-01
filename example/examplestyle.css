@@ -61,7 +61,7 @@ html, body {
     stroke-width: 1;
 }
 
-.resize-handle.corner {
+.resize-handle.corner, .line-modify-handle {
     stroke: #49abce;
     stroke-width: 1;
     fill: #ffffff;
