@@ -68,8 +68,7 @@ export class FlowchartEditor {
                 this.elementEditorObj.positionalPress(ev, new DOMPoint(ev.clientX, ev.clientY));
             }
         } else if (ev.type == 'mousemove') {
-            const pt = new DOMPoint(ev.clientX, ev.clientY);
-            this.elementEditorObj.positionalMove(pt);
+            this.elementEditorObj.positionalMove(new DOMPoint(ev.clientX, ev.clientY), ev.target);
         } else if (ev.type == 'mouseup') {
             this.currentCommand = '';
             this.elementEditorObj.positionalRelease();

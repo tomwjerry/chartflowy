@@ -72,8 +72,26 @@ html, body {
     fill: url(#connectorGradiant);
 }
 
-.connector:hover {
+.resize-handle.edge, .resize-handle.corner, .connector, .line-modify-handle, .connection-suggestion {
+    display: none;
+}
+
+.connection-suggest .connection-suggestion {
+    fill: #ffffff;
+    stroke: #36cbf0;
+}
+
+.connector:hover, .connection-suggest .connection-suggestion.highlight,
+.connection-suggest .connection-suggestion:hover {
     fill: #36cbf0;
+}
+
+.selected .resize-handle.edge,
+.selected .resize-handle.corner,
+.selected .connector,
+.selected .line-modify-handle,
+.connection-suggest .connection-suggestion {
+    display: unset;
 }
 
 /* This is important to select element through text */

@@ -18,6 +18,7 @@ export default class ElementEditor {
     shouldCreate;
     resizeDirections;
     lineHandleManipulate;
+    connectorSnapping;
     selectedElement;
     listOfElements;
     elementLookup;
@@ -38,6 +39,10 @@ export default class ElementEditor {
             top: false,
             bottom: false
         };
+        this.connectorSnapping = {
+            canSnap: false,
+            snapTo: null
+        };
         this.lineHandleManipulate = 0;
         this.elementLookup = new Map;
         this.nextid = 0;
@@ -48,7 +53,10 @@ export default class ElementEditor {
      * @param {string} datashape 
      */
     selectcreate(datashape) {
-        this.clearSelection();
+        if (this.selectedElement) {
+            this.selectedElement.getCorropspondingShape().parentNode.classList.remove('selected');
+        }
+
         switch (datashape) {
             case 'rect':
                 this.selectedElement = new RectangleShape({ width: 100, height: 60 });
@@ -99,24 +107,13 @@ export default class ElementEditor {
     }
 
     /**
-     * Removes selection gui elements
-     */
-    clearSelection() {
-        const oldSelections = this.workArea.querySelectorAll(
-            '.resize-handle, .connector, .line-modify-handle');
-
-        for (let rmSel of oldSelections) {
-            rmSel.remove();
-        }
-    }
-
-    /**
      * Selects element, yeah the element is already selected so draw some borders
      * around it. Make resize handles.
      */
     doSelectElement() {
         const corshape = this.selectedElement.getCorropspondingShape();
         const svgGroup = corshape.parentNode;
+        svgGroup.classList.add('selected');
 
         // Ofcourse, we dont have to do it if there already are resize handlers
         if (svgGroup.querySelector('.resize-handle, .line-modify-handle')) {
@@ -130,6 +127,9 @@ export default class ElementEditor {
             for (let i = 0; i < pathpoints.length; i++) {
                 const conhandle = Util.makeSVGElement('circle');
                 conhandle.dataset.pathIndex = i;
+                if (i == pathpoints.length - 1) {
+                    conhandle.dataset.pathIsLast = true;
+                }
                 conhandle.setAttribute('class', 'line-modify-handle');
                 conhandle.setAttribute('cx', pathpoints[i].values[0]);
                 conhandle.setAttribute('cy', pathpoints[i].values[1]);
@@ -147,25 +147,33 @@ export default class ElementEditor {
                 x: boundingBox.x,
                 y: boundingBox.y,
                 cx: boundingBox.x + boundingBox.width / 2,
-                cy: boundingBox.y - 15
+                cy: boundingBox.y - 15,
+                closecx: boundingBox.x + boundingBox.width / 2,
+                closecy: boundingBox.y
             },
             {
                 x: boundingBox.x + boundingBox.width,
                 y: boundingBox.y,
                 cx: boundingBox.x + boundingBox.width + 15,
-                cy: boundingBox.y + boundingBox.height / 2
+                cy: boundingBox.y + boundingBox.height / 2,
+                closecx: boundingBox.x + boundingBox.width,
+                closecy: boundingBox.y + boundingBox.height / 2
             },
             {
                 x: boundingBox.x + boundingBox.width,
                 y: boundingBox.y + boundingBox.height,
                 cx: boundingBox.x + boundingBox.width / 2,
-                cy: boundingBox.y + boundingBox.height + 15
+                cy: boundingBox.y + boundingBox.height + 15,
+                closecx: boundingBox.x + boundingBox.width / 2,
+                closecy: boundingBox.y + boundingBox.height
             },
             {
                 x: boundingBox.x,
                 y: boundingBox.y + boundingBox.height,
                 cx: boundingBox.x - 15,
-                cy: boundingBox.y + boundingBox.height / 2
+                cy: boundingBox.y + boundingBox.height / 2,
+                closecx: boundingBox.x,
+                closecy: boundingBox.y + boundingBox.height / 2
             }
         ];
 
@@ -182,10 +190,19 @@ export default class ElementEditor {
             svgGroup.appendChild(border);
 
             // Connector handle
-            const conhandle = Util.makeSVGElement('circle');
+            let conhandle = Util.makeSVGElement('circle');
             conhandle.setAttribute('class', 'connector');
             conhandle.setAttribute('cx', handles[i].cx);
             conhandle.setAttribute('cy', handles[i].cy);
+            conhandle.setAttribute('r', 5);
+            svgGroup.appendChild(conhandle);
+
+            // Connection suggestion
+            conhandle = Util.makeSVGElement('circle');
+            conhandle.setAttribute('class', 'connection-suggestion');
+            conhandle.id = corshape.id + '_close_' + i;
+            conhandle.setAttribute('cx', handles[i].closecx);
+            conhandle.setAttribute('cy', handles[i].closecy);
             conhandle.setAttribute('r', 5);
             svgGroup.appendChild(conhandle);
         }
@@ -342,6 +359,9 @@ export default class ElementEditor {
             this.editor.setCurrentCommand('connect');
             this.selectedElement.oldBBox = this.getAllElementBounds(this.selectedElement);
             this.lineHandleManipulate = ev.target.dataset.pathIndex;
+            this.connectorSnapping.canSnap =
+                ev.target.dataset.pathIndex == 0 ||
+                this.selectedElement.getCorropspondingShape().dataset.pathIsLast;
 
             return;
         }
@@ -374,10 +394,12 @@ export default class ElementEditor {
 
             if (cx != 0) {
                 connectorPos.x += cx > 0 ? -10 : 20;
+                connectorPos.y += 5;
             }
 
             if (cy != 0) {
                 connectorPos.y += cy > 0 ? -10 : 20;
+                connectorPos.x += 10;
             }
 
             connectorline.setAttribute('d', 'M 0 0 L 0 0'); // Needed to get pathdata
@@ -387,6 +409,7 @@ export default class ElementEditor {
             
             this.editor.setCurrentCommand('connect');
             this.lineHandleManipulate = 1;
+            this.connectorSnapping.canSnap = true;
 
             return;
         }
@@ -395,9 +418,11 @@ export default class ElementEditor {
         this.setSelectedElementText();
 
         const oldSelected = this.selectedElement;
+        if (oldSelected) {
+            oldSelected.getCorropspondingShape().parentNode.classList.remove('selected');
+        }
         // Change what shape is selected
         this.selectedElement = null;
-        this.clearSelection();
 
         // Find the shapes in the list of shapes, then select new!
         // TODO: If it is same element we dont need to do this
@@ -465,7 +490,7 @@ export default class ElementEditor {
      * On mouse move
      * @param {*} pos 
      */
-    positionalMove(pos) {
+    positionalMove(pos, target) {
         if (!this.selectedElement) {
             return;
         }
@@ -536,6 +561,32 @@ export default class ElementEditor {
             updatePos.x = pos.x - this.selectedElement.oldBBox.translateX;
             updatePos.y = pos.y - this.selectedElement.oldBBox.translateY;
             const pathdata = connectorShape.getPathData();
+
+            // Show handles if we are close to an element
+            if (target.classList.contains('connection-suggestion')) {
+                this.connectorSnapping.snapTo = target.id;
+                target.classList.add('highlight');
+                const connectorPos = target.getBoundingClientRect();
+                updatePos.x = connectorPos.x - this.selectedElement.oldBBox.translateX + 5;
+                updatePos.y = connectorPos.y - this.selectedElement.oldBBox.translateY + 5;
+            } else {
+                const highlightedHandles = this.editor.svgElement.querySelectorAll('.highlight');
+                for (const handle of highlightedHandles) {
+                    handle.classList.remove('highlight');
+                }
+
+                const previousSuggestion = this.editor.svgElement.querySelectorAll(
+                    '.connection-suggest:not(#' + target.id + ')');
+                for (const suggestion of previousSuggestion) {
+                    suggestion.classList.remove('connection-suggest');
+                }
+
+                if (this.elementLookup.has(target.id)) {
+                    this.listOfElements[this.elementLookup.get(target.id)]
+                        .getCorropspondingShape().parentNode.classList.add('connection-suggest');
+                }
+            }
+
             pathdata[this.lineHandleManipulate].values = [updatePos.x, updatePos.y];
             connectorShape.setPathData(pathdata); // Apparently needed
             
