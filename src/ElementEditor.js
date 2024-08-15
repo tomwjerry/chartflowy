@@ -41,6 +41,7 @@ export default class ElementEditor {
         };
         this.connectorSnapping = {
             canSnap: false,
+            snapShapeId: null,
             snapTo: null
         };
         this.lineHandleManipulate = 0;
@@ -295,6 +296,12 @@ export default class ElementEditor {
         enteredText.remove();
     }
 
+    /**
+     * Get attibutes of shape and its container in an array
+     * where first element is name and second is value
+     * @param {*} shape 
+     * @returns 
+     */
     getElementAttributes(shape) {
         const selshape = shape.getCorropspondingShape();
         const shapeParams = selshape.attributes;
@@ -311,6 +318,9 @@ export default class ElementEditor {
         return shapeArray;
     }
 
+    /**
+     * Get all bounds of shape along with parsed translation
+     */
     getAllElementBounds(shape) {
         const shapeToResize = shape
             .getCorropspondingShape();
@@ -385,7 +395,13 @@ export default class ElementEditor {
         if (ev.target.classList.contains('connector')) {
             const connector = ev.target;
             const connectorPos = connector.getBoundingClientRect();
+            const oldSelShape = this.listOfElements[this.elementLookup.get(
+                this.selectedElement.corrospondingShapeID)];
             this.selectcreate('connectionline');
+            oldSelShape.allConnections.push({
+                id: this.selectedElement.corrospondingShapeID,
+                point: 0
+            });
             const connectorline = this.selectedElement.getCorropspondingShape();
             const connectorlineContainer = connectorline.parentNode;
 
@@ -626,6 +642,12 @@ export default class ElementEditor {
         if (!this.selectedElement) {
             return;
         }
+
+        // Special case for connection lines
+        if (this.editor.getCurrentCommand() == 'connect' && this.connectorSnapping.snapTo) {
+            
+        }
+
         // Save the history
         const attrs = this.getElementAttributes(this.selectedElement);
         

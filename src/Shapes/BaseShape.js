@@ -13,7 +13,6 @@ export default class BaseShape {
     oldContainerAttributes;
 
     constructor() {
-        this.recomendedConnections = [];
         this.allConnections = [];
     }
 
