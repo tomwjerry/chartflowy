@@ -4,7 +4,7 @@
   "description": "Yet another Javascript SVG Flowchart Editor",
   "main": "src/FlowchartEditor.js",
   "scripts": {
-    "build": "esbuild --bundle --global-name=jssvgflow src/FlowchartEditor.js --outfile=build/jssvgflowedit.js",
+    "build": "esbuild --bundle --global-name=jssvgflow src/FlowchartEditor.js --outfile=example/jssvgflowedit.js",
     "serve": "esbuild --bundle --global-name=jssvgflow src/FlowchartEditor.js --outfile=example/jssvgflowedit.js --servedir=example"
   },
   "author": "Tom",
