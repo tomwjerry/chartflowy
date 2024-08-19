@@ -15,7 +15,6 @@ export default class ElementEditor {
     workArea;
     undoRedo;
 
-    shouldCreate;
     resizeDirections;
     lineHandleManipulate;
     connectorSnapping;
@@ -23,13 +22,13 @@ export default class ElementEditor {
     listOfElements;
     elementLookup;
     nextid;
+    oldMovePosition;
 
     constructor(editor, workArea, undoRedo) {
         this.editor = editor;
         this.workArea = workArea;
         this.undoRedo = undoRedo;
 
-        this.shouldCreate = false;
         this.selectedElement = null;
         this.shouldAddElement = false;
         this.listOfElements = [];
@@ -47,6 +46,7 @@ export default class ElementEditor {
         this.lineHandleManipulate = 0;
         this.elementLookup = new Map;
         this.nextid = 0;
+        this.oldMovePosition = { x: 0, y: 0 };
     }
 
     /**
@@ -103,7 +103,6 @@ export default class ElementEditor {
         this.listOfElements.push(this.selectedElement);
         
         // Set some basic modes
-        this.shouldCreate = true;
         this.nextid++;
     }
 
@@ -111,8 +110,9 @@ export default class ElementEditor {
      * Selects element, yeah the element is already selected so draw some borders
      * around it. Make resize handles.
      */
-    doSelectElement() {
-        const corshape = this.selectedElement.getCorropspondingShape();
+    doSelectElement(selElement) {
+        this.selectedElement = selElement;
+        const corshape = selElement.getCorropspondingShape();
         const svgGroup = corshape.parentNode;
         svgGroup.classList.add('selected');
 
@@ -122,7 +122,7 @@ export default class ElementEditor {
         }
 
         // Connector line special case
-        if (this.selectedElement.name == 'ConnectionLine') {
+        if (selElement.name == 'ConnectionLine') {
             const pathpoints = corshape.getPathData();
             
             for (let i = 0; i < pathpoints.length; i++) {
@@ -443,14 +443,20 @@ export default class ElementEditor {
         // Find the shapes in the list of shapes, then select new!
         // TODO: If it is same element we dont need to do this
         if (this.elementLookup.has(ev.target.id)) {
-            this.selectedElement =
-                this.listOfElements[this.elementLookup.get(ev.target.id)];
-            this.doSelectElement();
-            this.editor.setCurrentCommand('move');
+            this.doSelectElement(this.listOfElements[this.elementLookup.get(ev.target.id)]);
+
+            // Save old attributes
+            this.selectedElement.oldBBox = this.getAllElementBounds(this.selectedElement);
+            this.oldMovePosition = {
+                x: this.selectedElement.oldBBox.translateX,
+                y: this.selectedElement.oldBBox.translateY
+            };
 
             const attrs = this.getElementAttributes(this.selectedElement);
             this.selectedElement.oldAttributes = attrs[0];
             this.selectedElement.oldContainerAttributes = attrs[1];
+
+            this.editor.setCurrentCommand('move');
         }
 
         // Edit text
@@ -515,13 +521,27 @@ export default class ElementEditor {
         // Create / move element
         if (currentCommand == 'create' ||
             currentCommand == 'move') {
+            const dx = pos.x - this.oldMovePosition.x;
+            const dy = pos.y - this.oldMovePosition.y;
+            this.oldMovePosition = pos;
             const shape = this.selectedElement.getCorropspondingShape().parentNode;
             shape.setAttribute('transform', 'translate(' + pos.x + ',' + pos.y + ')');
 
-            if (this.shouldCreate) {
-                this.shouldCreate = false;
+            if (currentCommand == 'create') {
+                this.selectedElement.oldBBox = this.getAllElementBounds(this.selectedElement);
+                this.editor.setCurrentCommand('move');
                 this.undoRedo.addHistory(new CreateCommand(
                     shape, this.workArea));
+            } else if (currentCommand == 'move') {
+                for (const connectordata of this.selectedElement.allConnections) {
+                    const connector = this.listOfElements[this.elementLookup.get(connectordata.id)];
+                    const connectorShape = connector.getCorropspondingShape();
+                    const conPoss = connectorShape.getPathData();
+
+                    conPoss[connectordata.point].values[0] += dx;
+                    conPoss[connectordata.point].values[1] += dy;
+                    connectorShape.setPathData(conPoss); 
+                }
             }
         
         // If we actively resize
@@ -578,14 +598,17 @@ export default class ElementEditor {
             updatePos.y = pos.y - this.selectedElement.oldBBox.translateY;
             const pathdata = connectorShape.getPathData();
 
-            // Show handles if we are close to an element
+            // Try to snap to connector
             if (target.classList.contains('connection-suggestion')) {
                 this.connectorSnapping.snapTo = target.id;
                 target.classList.add('highlight');
                 const connectorPos = target.getBoundingClientRect();
                 updatePos.x = connectorPos.x - this.selectedElement.oldBBox.translateX + 5;
                 updatePos.y = connectorPos.y - this.selectedElement.oldBBox.translateY + 5;
+            // Show handles if we are close to an element
             } else {
+                this.connectorSnapping.snapShapeId = target.id;
+                // Remove old highlight
                 const highlightedHandles = this.editor.svgElement.querySelectorAll('.highlight');
                 for (const handle of highlightedHandles) {
                     handle.classList.remove('highlight');
@@ -644,8 +667,14 @@ export default class ElementEditor {
         }
 
         // Special case for connection lines
-        if (this.editor.getCurrentCommand() == 'connect' && this.connectorSnapping.snapTo) {
-            
+        if (this.editor.getCurrentCommand() == 'connect' &&
+            this.connectorSnapping.snapShapeId && this.connectorSnapping.snapTo) {
+            const connectedElement =
+                this.listOfElements[this.elementLookup.get(this.connectorSnapping.snapShapeId)];
+            connectedElement.allConnections.push({
+                id: this.selectedElement.corrospondingShapeID,
+                point: this.lineHandleManipulate
+            });
         }
 
         // Save the history
@@ -658,6 +687,6 @@ export default class ElementEditor {
             this.selectedElement.getCorropspondingShape().parentNode,
             attrs[1], this.selectedElement.oldContainerAttributes));
         // Make resize borders if there are none
-        this.doSelectElement();
+        this.doSelectElement(this.selectedElement);
     }
 }
