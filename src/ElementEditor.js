@@ -666,17 +666,6 @@ export default class ElementEditor {
             return;
         }
 
-        // Special case for connection lines
-        if (this.editor.getCurrentCommand() == 'connect' &&
-            this.connectorSnapping.snapShapeId && this.connectorSnapping.snapTo) {
-            const connectedElement =
-                this.listOfElements[this.elementLookup.get(this.connectorSnapping.snapShapeId)];
-            connectedElement.allConnections.push({
-                id: this.selectedElement.corrospondingShapeID,
-                point: this.lineHandleManipulate
-            });
-        }
-
         // Save the history
         const attrs = this.getElementAttributes(this.selectedElement);
         
@@ -686,6 +675,25 @@ export default class ElementEditor {
         this.undoRedo.addHistory(new ModifyCommand(
             this.selectedElement.getCorropspondingShape().parentNode,
             attrs[1], this.selectedElement.oldContainerAttributes));
+        
+        // Special case for connection lines
+        if (this.editor.getCurrentCommand() == 'connect' &&
+            this.connectorSnapping.snapShapeId && this.connectorSnapping.snapTo) {
+            const connectedElement =
+                this.listOfElements[this.elementLookup.get(this.connectorSnapping.snapShapeId)];
+            connectedElement.allConnections.push({
+                id: this.selectedElement.corrospondingShapeID,
+                point: this.lineHandleManipulate
+            });
+
+            const suggestedShape = this.editor.svgElement.querySelector('.connection-suggest');
+            if (suggestedShape) {
+                suggestedShape.classList.remove('connection-suggest');
+            }
+            this.selectedElement = null;
+            return;
+        }
+
         // Make resize borders if there are none
         this.doSelectElement(this.selectedElement);
     }
