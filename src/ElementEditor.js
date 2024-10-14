@@ -335,8 +335,6 @@ export default class ElementEditor {
             translateToParse);
 
         return {
-            x: resizeBoundingBox.x,
-            y: resizeBoundingBox.y,
             width: resizeBoundingBox.width,
             height: resizeBoundingBox.height,
             absoluteX: resizePositionBox.x,
@@ -547,13 +545,11 @@ export default class ElementEditor {
         // If we actively resize
         } else if (currentCommand == 'resize') {
             // First we want to get the actual boundingbox
-            // I think the client bounding box might not be accurate so I might
-            // need to combine it with SVG BBox
             // We need to convert to relative corridates
-            // (isnt scale n' transform more simple?)
             const shapeToResize = this.selectedElement
                 .getCorropspondingShape();
             const oldBBox = this.selectedElement.oldBBox;
+            const oldSize = shapeToResize.getBoundingClientRect();
             
             const relativeResizePositionBox = {
                 x: oldBBox.translateX,
@@ -589,6 +585,49 @@ export default class ElementEditor {
             // Finally, call the resize method that update the size.
             // We probally do not want to scale, thats ugly, but more simple
             this.selectedElement.resize(relativeResizePositionBox);
+            const newSize = shapeToResize.getBoundingClientRect();
+
+            for (const connectordata of this.selectedElement.allConnections) {
+                const connector = this.listOfElements[this.elementLookup.get(connectordata.id)];
+                const connectorShape = connector.getCorropspondingShape();
+                const connBBox = connectorShape.getBoundingClientRect();
+
+                // First find what corner at the bounding box that the path touches:
+                // top left, top right, bottom left, bottom right
+                const connectorPointsLen = connectorShape.getTotalLength();
+                const relevantPointPos = connectorShape.getPointAtLength(
+                    connectordata.point == 0 ? 0 : connectorPointsLen
+                );
+                const finalConPos = {
+                    x: relevantPointPos.x + connBBox.x,
+                    y: relevantPointPos.y + connBBox.y
+                };
+
+                const pathdata = connectorShape.getPathData();
+                
+                // Second find what side connector are at
+                // if the connect is at affected side, update it, else do not do anything
+                if (this.resizeDirections.left) {
+                    if (finalConPos.x < relativeResizePositionBox.x + relativeResizePositionBox.width) {
+                        pathdata[connectordata.point].values[0] += (oldSize.width - newSize.width);
+                    }
+                } else if (this.resizeDirections.right) {
+                    if (finalConPos.x > relativeResizePositionBox.x) {
+                        pathdata[connectordata.point].values[0] -= (oldSize.width - newSize.width);
+                    }
+                }
+                if (this.resizeDirections.top) {
+                    if (finalConPos.y < relativeResizePositionBox.y + relativeResizePositionBox.height) {
+                        pathdata[connectordata.point].values[1] += (oldSize.height - newSize.height);
+                    }
+                } else if (this.resizeDirections.bottom) {
+                    if (finalConPos.y > relativeResizePositionBox.y) {
+                        pathdata[connectordata.point].values[1] -= (oldSize.height - newSize.height);
+                    }
+                }
+
+                connectorShape.setPathData(pathdata); 
+            }
 
         // Connector line update, actually very similar to resize
         } else if (currentCommand == 'connect') {
