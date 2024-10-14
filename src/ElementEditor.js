@@ -116,31 +116,6 @@ export default class ElementEditor {
         const svgGroup = corshape.parentNode;
         svgGroup.classList.add('selected');
 
-        // Ofcourse, we dont have to do it if there already are resize handlers
-        if (svgGroup.querySelector('.resize-handle, .line-modify-handle')) {
-            return;
-        }
-
-        // Connector line special case
-        if (selElement.name == 'ConnectionLine') {
-            const pathpoints = corshape.getPathData();
-            
-            for (let i = 0; i < pathpoints.length; i++) {
-                const conhandle = Util.makeSVGElement('circle');
-                conhandle.dataset.pathIndex = i;
-                if (i == pathpoints.length - 1) {
-                    conhandle.dataset.pathIsLast = true;
-                }
-                conhandle.setAttribute('class', 'line-modify-handle');
-                conhandle.setAttribute('cx', pathpoints[i].values[0]);
-                conhandle.setAttribute('cy', pathpoints[i].values[1]);
-                conhandle.setAttribute('r', 5);
-                svgGroup.appendChild(conhandle);
-            }
-
-            return;
-        }
-        
         const boundingBox = corshape.getBBox();
         // Make selection borders and corners
         const handles = [
@@ -177,6 +152,58 @@ export default class ElementEditor {
                 closecy: boundingBox.y + boundingBox.height / 2
             }
         ];
+
+        // Ofcourse, we dont have to do it if there already are resize handlers
+        if (svgGroup.querySelector('.resize-handle, .line-modify-handle')) {
+            // Update handles
+            const resizeHandleEdges = svgGroup.querySelectorAll('.resize-handle.edge');
+            const resizeHandleCorners = svgGroup.querySelectorAll('.resize-handle.corner');
+            const connectors = svgGroup.querySelectorAll('.connector');
+            const connectorSuggestions = svgGroup.querySelectorAll('.connection-suggestion');
+
+            for (let i = 0; i < handles.length; i++) {
+                if (!resizeHandleEdges[i]) {
+                    continue;
+                }
+                const x2 = handles[(i + 1) % handles.length].x;
+                const y2 = handles[(i + 1) % handles.length].y;
+                resizeHandleEdges[i].setAttribute('x1', handles[i].x);
+                resizeHandleEdges[i].setAttribute('y1', handles[i].y);
+                resizeHandleEdges[i].setAttribute('x2', x2);
+                resizeHandleEdges[i].setAttribute('y2', y2);
+
+                connectors[i].setAttribute('cx', handles[i].cx);
+                connectors[i].setAttribute('cy', handles[i].cy);
+
+                connectorSuggestions[i].setAttribute('cx', handles[i].closecx);
+                connectorSuggestions[i].setAttribute('cy', handles[i].closecy);
+
+                resizeHandleCorners[i].setAttribute('cx', handles[i].x);
+                resizeHandleCorners[i].setAttribute('cy', handles[i].y);
+            }
+
+            return;
+        }
+
+        // Connector line special case
+        if (selElement.name == 'ConnectionLine') {
+            const pathpoints = corshape.getPathData();
+            
+            for (let i = 0; i < pathpoints.length; i++) {
+                const conhandle = Util.makeSVGElement('circle');
+                conhandle.dataset.pathIndex = i;
+                if (i == pathpoints.length - 1) {
+                    conhandle.dataset.pathIsLast = true;
+                }
+                conhandle.setAttribute('class', 'line-modify-handle');
+                conhandle.setAttribute('cx', pathpoints[i].values[0]);
+                conhandle.setAttribute('cy', pathpoints[i].values[1]);
+                conhandle.setAttribute('r', 5);
+                svgGroup.appendChild(conhandle);
+            }
+
+            return;
+        }
 
         // Resize borders around object, also put connector handles in the middle
         for (let i = 0; i < handles.length; i++) {
@@ -654,7 +681,7 @@ export default class ElementEditor {
                 }
 
                 const previousSuggestion = this.editor.svgElement.querySelectorAll(
-                    '.connection-suggest:not(#' + target.id + ')');
+                    '.connection-suggest:not([id="' + target.id + '"])');
                 for (const suggestion of previousSuggestion) {
                     suggestion.classList.remove('connection-suggest');
                 }
